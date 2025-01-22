@@ -31,6 +31,36 @@ agent.add_custom_function(
     )
 )
 
+# add function to call bitmindlabs.ai/detect-image
+agent.add_custom_function(
+    Function(
+        fn_name="detect_image",
+        fn_description="detect the image",
+        args=[
+            FunctionArgument(
+                name="image",
+                type="string",
+                description="The image url to detect"
+            )
+        ],
+        config=FunctionConfig(
+            method="post",
+            headers={
+                "Authorization": f"Bearer {os.environ.get('BITMINDLABS_API_KEY')}",
+                "Content-Type": "application/json"
+            },
+            payload={
+                "image": "{{URL}}"
+            },
+            url="https://bitmindlabs.ai/detect-image",
+            platform="twitter",
+            success_feedback="I detected the image",
+            error_feedback="I couldn't detect the image",
+        )
+    )
+)
+
+
 # running reaction module only for platform telegram
 agent.react(
     session_id="session-telegram",

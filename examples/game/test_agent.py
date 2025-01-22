@@ -2,6 +2,7 @@ from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.custom_types import Function, Argument, FunctionResult, FunctionResultStatus
 from typing import Tuple
 import os
+import requests
 
 game_api_key = os.environ.get("GAME_API_KEY")
 
@@ -135,6 +136,42 @@ def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, d
         return FunctionResultStatus.DONE, f"Powerfully threw the {object} across the room!", {}
     return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a furniture item", {}
 
+def detect_image(image: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
+    """
+    Function to detect the image.
+    """
+    
+    response = requests.post(
+        'https://subnet-api.bitmindlabs.ai/detect-image',
+        headers={
+            "Authorization": f"Bearer {os.environ.get('BITMINDLABS_API_KEY')}",
+            'Content-Type': 'application/json'
+        },
+        json={
+            'image': {{URL}}
+        }
+    )
+    
+    
+    # {
+    #   "isAI": true,
+    #   "confidence": 0.9991202464509517,
+    #   "predictions": [
+    #     0.9567890123456789,
+    #     0.9992146492004395,
+    #     // ...
+    #   ],
+    #   "similarity": 0.26494999999999996,
+    #   "fqdn": "validator.bitmindlabs.ai"
+    # }
+    
+    # if response.json()["isAI"]:
+    #     return True
+    if response.json()["isAI"]:
+        return FunctionResultStatus.DONE, f"Successfully detected the image", {response.json["isAI"]}
+    return FunctionResultStatus.ERROR, f"I couldn't detect the image", {}
+
+
 
 # create functions for each executable
 take_object_fn = Function(
@@ -187,6 +224,14 @@ furniture_thrower = WorkerConfig(
     get_state_fn=get_worker_state_fn,
     action_space=[take_object_fn, sit_on_object_fn, throw_furniture_fn]
 )
+
+bitmind_fn = Function(
+    fn_name="detect_image",
+    fn_description="detect the image",
+    args=[Argument(name="image", type="string", description="The image url to detect")],
+    executable=detect_image
+)
+
 
 # Create agent with both workers
 chaos_agent = Agent(
