@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tee_plugin_gamesdk"
+version = "0.1.0"
+authors = [
+  { name = "Will Jiang", email = "jianliiin96@gmail.com" },
+]
+description = "TEE Plugin for Python SDK for GAME by Virtuals"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "requests>=2.31.0",
+  "requests_unixsocket2>=0.4.2",
+  "pyjwt>=2.10"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["tee_plugin_gamesdk"]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"
