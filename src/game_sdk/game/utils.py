@@ -76,18 +76,35 @@ def post(base_url: str, api_key: str, endpoint: str, data: dict) -> dict:
         
         response = requests.post(
             f"{base_url}/{endpoint}",
-            json={"data": data},
-            headers={"Authorization": f"Bearer {access_token}"},
+            json=data,  # Send data directly without wrapping
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            },
             timeout=config.get("request_timeout")
         )
 
-        response_json = response.json()
-        if response.status_code != 200:
+        # Handle 204 No Content responses
+        if response.status_code == 204:
+            return {"success": True}
+
+        # Handle empty responses
+        if not response.text:
+            if response.status_code in [200, 201, 202]:
+                return {"success": True}
+            raise APIError(f"Empty response from server with status code {response.status_code}")
+
+        try:
+            response_json = response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            raise APIError(f"Invalid JSON response: {response.text}")
+
+        if response.status_code not in [200, 201, 202]:
             if response.status_code == 401:
                 raise AuthenticationError("Invalid access token", response.status_code, response_json)
             raise APIError(f"API request failed: {response_json}", response.status_code, response_json)
 
-        return response_json["data"]
+        return response_json.get("data", response_json)  # Handle both wrapped and unwrapped responses
     except requests.exceptions.Timeout:
         raise APIError(f"Request timed out while calling {endpoint}")
     except requests.exceptions.RequestException as e:
@@ -122,9 +139,11 @@ def create_agent(
         raise ValidationError("name, description, and goal are required")
 
     data = {
-        "name": name,
-        "description": description,
-        "goal": goal
+        "data": {  # Wrap in data object as required by API
+            "name": name,
+            "description": description,
+            "goal": goal
+        }
     }
 
     return post(base_url, api_key, "agents", data)
@@ -152,14 +171,11 @@ def create_workers(
     """
     if not isinstance(workers, list):
         raise ValidationError("workers must be a list")
-    
-    if not workers:
-        raise ValidationError("workers list cannot be empty")
 
-    for worker in workers:
-        if not isinstance(worker, dict):
-            raise ValidationError("Each worker must be a dictionary")
-        if "description" not in worker:
-            raise ValidationError("Each worker must have a description")
+    data = {
+        "data": {  # Wrap in data object as required by API
+            "workers": workers
+        }
+    }
 
-    return post(base_url, api_key, "workers", {"workers": workers})
+    return post(base_url, api_key, "workers", data)

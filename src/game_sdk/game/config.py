@@ -29,7 +29,7 @@ class SDKConfig:
     """
 
     DEFAULT_CONFIG = {
-        "api_base_url": "https://game.virtuals.io",
+        "api_base_url": "https://api.virtuals.io/api",
         "api_version": "v1",
         "request_timeout": 30,
         "max_retries": 3,
@@ -51,7 +51,7 @@ class SDKConfig:
 
     def _load_env_vars(self):
         """Load configuration from environment variables."""
-        env_mapping = {
+        env_mappings = {
             "GAME_API_BASE_URL": "api_base_url",
             "GAME_API_VERSION": "api_version",
             "GAME_REQUEST_TIMEOUT": "request_timeout",
@@ -59,16 +59,16 @@ class SDKConfig:
             "GAME_RETRY_DELAY": "retry_delay",
         }
 
-        for env_var, config_key in env_mapping.items():
-            value = os.environ.get(env_var)
-            if value is not None:
-                # Convert to int for numeric settings
+        for env_var, config_key in env_mappings.items():
+            if env_var in os.environ:
+                value = os.environ[env_var]
+                # Convert numeric values
                 if config_key in ["request_timeout", "max_retries", "retry_delay"]:
                     try:
                         value = int(value)
                     except ValueError:
                         raise ConfigurationError(
-                            f"Invalid value for {env_var}: {value}. Must be an integer."
+                            f"Invalid value for {env_var}: {value}. Expected an integer."
                         )
                 self._config[config_key] = value
 
@@ -77,37 +77,18 @@ class SDKConfig:
         Get a configuration value.
 
         Args:
-            key: Configuration key to retrieve
+            key: Configuration key to get
             default: Default value if key doesn't exist
 
         Returns:
-            Configuration value
+            The configuration value
         """
         return self._config.get(key, default)
 
-    def set(self, key: str, value: Any):
-        """
-        Set a configuration value.
-
-        Args:
-            key: Configuration key to set
-            value: Value to set
-
-        Raises:
-            ConfigurationError: If key is invalid
-        """
-        if key not in self.DEFAULT_CONFIG:
-            raise ConfigurationError(f"Invalid configuration key: {key}")
-        self._config[key] = value
-
     @property
     def api_url(self) -> str:
-        """Get the full API URL including version."""
-        return f"{self._config['api_base_url']}/{self._config['api_version']}"
-
-    def as_dict(self) -> Dict[str, Any]:
-        """Get all configuration as a dictionary."""
-        return self._config.copy()
+        """Get the full API URL."""
+        return self._config["api_base_url"]
 
 
 # Global configuration instance
