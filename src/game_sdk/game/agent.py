@@ -1,8 +1,14 @@
+"""
+Agent class for interacting with the GAME API.
+"""
+
 from typing import List, Optional, Callable, Dict
 import uuid
 from game_sdk.game.worker import Worker
 from game_sdk.game.custom_types import Function, FunctionResult, FunctionResultStatus, ActionResponse, ActionType
 from game_sdk.game.utils import create_agent, create_workers, post
+from game_sdk.game.config import config
+
 
 class Session:
     def __init__(self):
@@ -52,7 +58,7 @@ class Agent:
                  workers: Optional[List[WorkerConfig]] = None,
                  ):
 
-        self._base_url: str = "https://game.virtuals.io"
+        self._base_url: str = config.api_url  # Use the configured API URL
         self._api_key: str = api_key
 
         # checks

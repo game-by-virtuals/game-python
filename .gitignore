@@ -1,10 +1,95 @@
-*.pth
-*.env
-*#
-*~
-*.pyc
-*__pycache__
-*.json
+# Git Ignore File Guide
+# ---------------------
+# - Each line specifies a pattern for files/directories that Git should ignore
+# - '*' means "match any characters"
+# - A trailing '/' indicates a directory
+# - Lines starting with '#' are comments
+# - Patterns are matched relative to the location of the .gitignore file
+# - More specific rules override more general rules
+# - Use '!' to negate a pattern (include something that would otherwise be ignored)
 
-*.DS_Store
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+.python-version
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Distribution / packaging
+.Python
+*.pth
+*.whl
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+*.json  # Temporary JSON files
+.env.local
+.env.*.local
+config.local.py
