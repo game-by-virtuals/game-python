@@ -1,95 +1,123 @@
+"""Worker module for handling autonomous task execution."""
 from typing import Any, Callable, Dict, Optional, List
 from game_sdk.game.custom_types import Function, FunctionResult, FunctionResultStatus, ActionResponse, ActionType
 from game_sdk.game.utils import create_agent, post
 
 class Worker:
     """
-    A interactable worker agent, that can autonomously complete tasks with its available functions when given a task
+    An interactable worker agent that can autonomously complete tasks with its available functions.
+    
+    This class provides functionality to create and manage a worker that can:
+    - Execute tasks autonomously
+    - Maintain state between actions
+    - Handle function results and state updates
+    
+    Attributes:
+        description (str): Description of the worker/character card (PROMPT)
+        instruction (str): Specific additional instruction for the worker (PROMPT)
+        get_state_fn (Callable): Function to get the current state
+        state (Dict): Current state of the worker
+        action_space (Dict[str, Function]): Available functions/tools for the worker
     """
 
     def __init__(
         self,
         api_key: str,
-        description: str,  # description of the worker/character card (PROMPT)
+        description: str,
         get_state_fn: Callable,
         action_space: List[Function],
-        # specific additional instruction for the worker (PROMPT)
-        instruction: Optional[str] = "",
+        instruction: str = "",
     ):
-
+        """
+        Initialize a Worker instance.
+        
+        Args:
+            api_key (str): API key for authentication
+            description (str): Description of the worker/character card
+            get_state_fn (Callable): Function to get the current state
+            action_space (List[Function]): List of available functions
+            instruction (str, optional): Additional instructions for the worker. Defaults to "".
+            
+        Raises:
+            ValueError: If api_key is not set
+        """
         self._base_url: str = "https://game.virtuals.io"
         self._api_key: str = api_key
 
-        # checks
         if not self._api_key:
             raise ValueError("API key not set")
 
         self.description: str = description
         self.instruction: str = instruction
+        self._get_state_fn = get_state_fn
 
-        # setup get state function and initial state
+        # Setup get state function and initial state
         self.get_state_fn = lambda function_result, current_state: {
-            "instructions": self.instruction,  # instructions are set up in the state
-            # places the rest of the output of the get_state_fn in the state
-            **get_state_fn(function_result, current_state),
+            "instructions": self.instruction,
+            **self._get_state_fn(function_result, current_state),
         }
+
+        # Initialize with dummy function result
         dummy_function_result = FunctionResult(
             action_id="",
             action_status=FunctionResultStatus.DONE,
             feedback_message="",
             info={},
         )
-        # get state
         self.state = self.get_state_fn(dummy_function_result, None)
 
-        # # setup action space (functions/tools available to the worker)
-        # check action space type - if not a dict
-        if not isinstance(action_space, dict):
-            self.action_space = {
-                f.get_function_def()["fn_name"]: f for f in action_space}
-        else:
-            self.action_space = action_space
+        # Setup action space
+        self.action_space = {
+            f.get_function_def()["fn_name"]: f for f in action_space
+        } if not isinstance(action_space, dict) else action_space
 
-        # initialize an agent instance for the worker
+        # Initialize agent
         self._agent_id: str = create_agent(
-            self._base_url, self._api_key, "StandaloneWorker", self.description, "N/A"
+            api_key=self._api_key,
+            description=self.description,
+            instruction=self.instruction
         )
 
-        # persistent variables that is maintained through the worker running
-        # task ID for everytime you provide/update the task (i.e. ask the agent to do something)
+        # Persistent variables
         self._submission_id: Optional[str] = None
-        # current response from the Agent
         self._function_result: Optional[FunctionResult] = None
 
-    def set_task(self, task: str):
+    def set_task(self, task: str) -> str:
         """
-        Sets the task for the agent
+        Set a task for the worker to execute.
+        
+        Args:
+            task (str): The task description
+            
+        Returns:
+            str: The submission ID for the task
+            
+        Raises:
+            ValueError: If the task cannot be assigned
         """
-        set_task_response = post(
+        response = post(
             base_url=self._base_url,
             api_key=self._api_key,
             endpoint=f"/v2/agents/{self._agent_id}/tasks",
             data={"task": task},
         )
-        # response_json = set_task_response.json()
 
-        # if set_task_response.status_code != 200:
-        #     raise ValueError(f"Failed to assign task: {response_json}")
-
-        # task ID
-        self._submission_id = set_task_response["submission_id"]
+        self._submission_id = response.get("submission_id")
+        if not self._submission_id:
+            raise ValueError(f"Failed to assign task: {response}")
 
         return self._submission_id
 
-    def _get_action(
-        self,
-        # results of the previous action (if any)
-        function_result: Optional[FunctionResult] = None
-    ) -> ActionResponse:
+    def _get_action(self, function_result: Optional[FunctionResult] = None) -> ActionResponse:
         """
-        Gets the agent action from the GAME API
+        Get the next action from the GAME API.
+        
+        Args:
+            function_result (Optional[FunctionResult]): Results of the previous action
+            
+        Returns:
+            ActionResponse: The next action to execute
         """
-        # dummy function result if None is provided - for get_state_fn to take the same input all the time
         if function_result is None:
             function_result = FunctionResult(
                 action_id="",
@@ -97,19 +125,13 @@ class Worker:
                 feedback_message="",
                 info={},
             )
-        # set up data payload
+
         data = {
-            "environment": self.state,  # state (updated state)
-            "functions": [
-                f.get_function_def() for f in self.action_space.values()  # functions available
-            ],
-            "action_result": (
-                function_result.model_dump(
-                    exclude={'info'}) if function_result else None
-            ),
+            "environment": self.state,
+            "functions": [f.get_function_def() for f in self.action_space.values()],
+            "action_result": function_result.model_dump(exclude={'info'}) if function_result else None,
         }
 
-        # make API call
         response = post(
             base_url=self._base_url,
             api_key=self._api_key,
@@ -119,21 +141,22 @@ class Worker:
 
         return ActionResponse.model_validate(response)
 
-    def step(self):
+    def step(self) -> tuple[ActionResponse, Optional[FunctionResult]]:
         """
-        Execute the next step in the task - requires a task ID (i.e. task ID)
+        Execute the next step in the current task.
+        
+        Returns:
+            tuple[ActionResponse, Optional[FunctionResult]]: The action response and function result
+            
+        Raises:
+            ValueError: If no task is set or if there's an unexpected action type
         """
         if not self._submission_id:
             raise ValueError("No task set")
 
-        # get action from GAME API (Agent)
         action_response = self._get_action(self._function_result)
         action_type = action_response.action_type
 
-        print(f"Action response: {action_response}")
-        print(f"Action type: {action_type}")
-
-        # execute action
         if action_type == ActionType.CALL_FUNCTION:
             if not action_response.action_args:
                 raise ValueError("No function information provided by GAME")
@@ -142,26 +165,24 @@ class Worker:
                 action_response.action_args["fn_name"]
             ].execute(**action_response.action_args)
 
-            print(f"Function result: {self._function_result}")
-
-            # update state
             self.state = self.get_state_fn(self._function_result, self.state)
 
-        elif action_response.action_type == ActionType.WAIT:
-            print("Task completed or ended (not possible)")
+        elif action_type == ActionType.WAIT:
             self._submission_id = None
+            self._function_result = None
 
         else:
-            raise ValueError(
-                f"Unexpected action type: {action_response.action_type}")
+            raise ValueError(f"Unexpected action type: {action_type}")
 
-        return action_response, self._function_result.model_copy()
+        return action_response, self._function_result.model_copy() if self._function_result else None
 
-    def run(self, task: str):
+    def run(self, task: str) -> None:
         """
-        Gets the agent to complete the task on its own autonomously
+        Execute a task autonomously until completion.
+        
+        Args:
+            task (str): The task to execute
         """
-
         self.set_task(task)
         while self._submission_id:
             self.step()

@@ -25,6 +25,8 @@ dist/                 # Distribution/build directory
 .idea/                # JetBrains IDEs (IntelliJ, PyCharm, etc.)
 .vscode/             # Visual Studio Code
 .pycharm/            # PyCharm specific
+.coverage/           # Coverage report
+
 
 ## Cursor-specific
 .cursorignore
@@ -39,3 +41,5 @@ dist/                 # Distribution/build directory
 # Data & Output Files
 *.json               # JSON data files
 
+# Testing & Debugging
+coverage/           # Coverage report
