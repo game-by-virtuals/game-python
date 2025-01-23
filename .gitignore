@@ -43,3 +43,7 @@ dist/                 # Distribution/build directory
 
 # Testing & Debugging
 coverage/           # Coverage report
+*.iml              # IntelliJ Project files
+*.sublime-project  # Sublime Text Project files
+*.sublime-workspace # Sublime Text Workspace files
+.vscode/settings.json
