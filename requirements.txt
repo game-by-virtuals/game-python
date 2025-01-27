@@ -1,0 +1,4 @@
+requests>=2.26.0
+pydantic>=2.10.5
+typing-extensions>=4.0.0
+tenacity>=8.0.0

@@ -240,7 +240,7 @@ class Agent:
             }
         )
 
-        return ActionResponse(response)
+        return ActionResponse(**response)
 
     def step(self):
         """Take a step in the agent's workflow.

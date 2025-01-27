@@ -1,235 +1,114 @@
-"""
-Custom types and data structures for the GAME SDK.
+"""Custom types and data structures for the GAME SDK.
 
-This module defines the core data structures and types used throughout the GAME SDK,
-including function definitions, arguments, results, and API responses.
+This module defines core data structures and types used in the SDK."""
 
-Example:
-    >>> from game_sdk.game.custom_types import Function, Argument
-    >>> 
-    >>> # Create a function definition
-    >>> weather_fn = Function(
-    ...     fn_name="get_weather",
-    ...     fn_description="Get weather for a city",
-    ...     args=[
-    ...         Argument(
-    ...             name="city",
-    ...             description="City name",
-    ...             type="string"
-    ...         )
-    ...     ]
-    ... )
-    >>> 
-    >>> # Execute the function
-    >>> result = weather_fn.execute(fn_id="123", args={"city": {"value": "New York"}})
-    >>> print(result.action_status)
-    'done'
-"""
-
-from typing import Any, Dict, Optional, List, Union, Sequence, Callable, Tuple
-from pydantic import BaseModel, Field
 from enum import Enum
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-import logging
-
-# Configure logging
-logger = logging.getLogger(__name__)
+from typing import Any, Dict, List, Optional, Union, Callable
+from pydantic import BaseModel
 
 
 class Argument(BaseModel):
-    """
-    Defines an argument for a function in the GAME SDK.
-    
+    """Defines an argument for a function.
+
     Attributes:
-        name (str): Name of the argument
-        description (str): Description of the argument's purpose
-        type (Optional[Union[List[str], str]]): Type(s) of the argument (e.g., "string", "integer")
-        optional (Optional[bool]): Whether the argument is optional
-        
-    Example:
-        >>> city_arg = Argument(
-        ...     name="city",
-        ...     description="City to get weather for",
-        ...     type="string",
-        ...     optional=False
-        ... )
+        name: Name of the argument
+        description: Description of what the argument does
+        type: Type of the argument (string, integer, etc.)
+        optional: Whether the argument is optional
     """
     name: str
     description: str
-    type: Optional[Union[List[str], str]] = None
-    optional: Optional[bool] = False
+    type: Union[str, List[str]]
+    optional: bool = False
 
 
 class FunctionResultStatus(str, Enum):
-    """
-    Status of a function execution.
-    
+    """Status of a function execution.
+
     Attributes:
         DONE: Function completed successfully
         FAILED: Function failed to complete
-        
-    Example:
-        >>> status = FunctionResultStatus.DONE
-        >>> print(status)
-        'done'
-        >>> str(status)
-        'done'
     """
     DONE = "done"
     FAILED = "failed"
-    
+
     def __str__(self) -> str:
         """Convert enum value to string."""
         return self.value
 
 
 class FunctionResult(BaseModel):
-    """
-    Result of a function execution.
-    
+    """Represents the result of a function execution.
+
     Attributes:
-        action_id (str): Unique identifier for the action
-        action_status (FunctionResultStatus): Status of the action
-        feedback_message (Optional[str]): Human-readable feedback
-        info (Optional[Dict[str, Any]]): Additional information
-        
-    Example:
-        >>> result = FunctionResult(
-        ...     action_id="123",
-        ...     action_status=FunctionResultStatus.DONE,
-        ...     feedback_message="Weather fetched successfully",
-        ...     info={"temperature": "20°C"}
-        ... )
+        action_id: Unique identifier for the action
+        action_status: Status of the function execution
+        feedback_message: Human-readable message about the execution
+        info: Additional information about the execution
     """
     action_id: str
     action_status: FunctionResultStatus
-    feedback_message: Optional[str] = None
-    info: Optional[Dict[str, Any]] = None
+    feedback_message: str
+    info: Dict[str, Any]
 
 
 class Function(BaseModel):
-    """
-    Defines a function that can be executed by a worker.
-    
+    """Defines a function that can be executed by a worker.
+
     Attributes:
-        fn_name (str): Name of the function
-        fn_description (str): Description of what the function does
-        args (List[Argument]): List of function arguments
-        hint (Optional[str]): Optional usage hint
-        executable (Callable): Function to execute
-        
-    Example:
-        >>> def get_weather(city: str) -> Tuple[FunctionResultStatus, str, dict]:
-        ...     return FunctionResultStatus.DONE, "Success", {"temp": "20°C"}
-        >>> 
-        >>> weather_fn = Function(
-        ...     fn_name="get_weather",
-        ...     fn_description="Get weather for a city",
-        ...     args=[
-        ...         Argument(
-        ...             name="city",
-        ...             description="City name",
-        ...             type="string"
-        ...         )
-        ...     ],
-        ...     executable=get_weather
-        ... )
+        fn_name: Name of the function
+        fn_description: Description of what the function does
+        args: List of arguments the function accepts
+        executable: Optional callable that implements the function
     """
     fn_name: str
     fn_description: str
     args: List[Argument]
-    hint: Optional[str] = None
-    
-    # Make executable required but with a default value
-    executable: Callable[..., Tuple[FunctionResultStatus, str, dict]] = Field(
-        default_factory=lambda: Function._default_executable
-    )
+    executable: Optional[Callable] = None
 
-    def get_function_def(self) -> Dict[str, Any]:
-        """
-        Get the function definition without the executable.
-        
-        Returns:
-            Dict containing function metadata (excluding executable)
-        """
-        return self.model_dump(exclude={'executable'})
+    def execute(self, fn_id: str, args: Dict[str, Any]) -> FunctionResult:
+        """Execute the function using provided arguments.
 
-    @staticmethod
-    def _default_executable(**kwargs) -> Tuple[FunctionResultStatus, str, dict]:
-        """
-        Default executable that does nothing.
-        
-        Returns:
-            Tuple of (status, message, info)
-        """
-        return FunctionResultStatus.DONE, "Default implementation - no action taken", {}
-    
-    def execute(self, **kwds: Any) -> FunctionResult:
-        """
-        Execute the function using arguments from GAME action.
-        
         Args:
-            **kwds: Keyword arguments including:
-                - fn_id: Function ID
-                - args: Function arguments
-                
+            fn_id: Unique identifier for this function execution
+            args: Dictionary of argument names to values
+
         Returns:
-            FunctionResult containing execution status and results
-            
-        Example:
-            >>> result = weather_fn.execute(
-            ...     fn_id="123",
-            ...     args={"city": {"value": "New York"}}
-            ... )
+            FunctionResult containing execution status and output
         """
-        fn_id = kwds.get('fn_id')
-        args = kwds.get('args', {})
+        if not self.executable:
+            return FunctionResult(
+                action_id=fn_id,
+                action_status=FunctionResultStatus.FAILED,
+                feedback_message="No executable defined for function",
+                info={}
+            )
 
         try:
-            # Extract values from the nested dictionary structure
-            processed_args = {}
-            for arg_name, arg_value in args.items():
-                if isinstance(arg_value, dict) and 'value' in arg_value:
-                    processed_args[arg_name] = arg_value['value']
-                else:
-                    processed_args[arg_name] = arg_value
-                    
-            logger.debug(f"Executing function {self.fn_name} with args: {processed_args}")
-            
-            # Execute the function provided
-            status, feedback, info = self.executable(**processed_args)
-
+            status, msg, info = self.executable(**args)
             return FunctionResult(
                 action_id=fn_id,
                 action_status=status,
-                feedback_message=feedback,
-                info=info,
+                feedback_message=msg,
+                info=info
             )
         except Exception as e:
-            logger.error(f"Error executing function {self.fn_name}: {e}")
             return FunctionResult(
                 action_id=fn_id,
                 action_status=FunctionResultStatus.FAILED,
                 feedback_message=f"Error executing function: {str(e)}",
-                info={},
+                info={}
             )
 
 
 class ActionType(str, Enum):
-    """
-    Types of actions returned by the GAME API.
-    
+    """Type of action returned by the GAME API.
+
     Attributes:
         CALL_FUNCTION: Execute a function
-        CONTINUE_FUNCTION: Continue a long-running function
+        CONTINUE_FUNCTION: Continue executing a function
         WAIT: Wait for a condition
-        GO_TO: Navigate to a location
-        
-    Example:
-        >>> action = ActionType.CALL_FUNCTION
-        >>> print(action)
-        'call_function'
+        GO_TO: Navigate to a different state
     """
     CALL_FUNCTION = "call_function"
     CONTINUE_FUNCTION = "continue_function"
@@ -237,127 +116,80 @@ class ActionType(str, Enum):
     GO_TO = "go_to"
 
 
-@dataclass(frozen=True)
-class HLPResponse:
-    """
-    High-Level Planner (HLP) response from GAME API.
-    
+class HLPResponse(BaseModel):
+    """High-level planning response from the GAME API.
+
     Attributes:
-        plan_id (str): Unique plan identifier
-        observation_reflection (str): Reflection on current state
-        plan (Sequence[str]): Sequence of planned steps
-        plan_reasoning (str): Reasoning behind the plan
-        current_state_of_execution (str): Current execution state
-        change_indicator (Optional[str]): Indicates state changes
-        log (Sequence[dict]): Execution log
-        
-    Example:
-        >>> hlp = HLPResponse(
-        ...     plan_id="123",
-        ...     observation_reflection="Weather is sunny",
-        ...     plan=["Check temperature", "Get forecast"],
-        ...     plan_reasoning="Need to provide weather update",
-        ...     current_state_of_execution="Checking temperature"
-        ... )
+        plan_id: Unique identifier for the plan
+        observation_reflection: Reflection on current observations
+        plan: List of planned steps
+        plan_reasoning: Reasoning behind the plan
+        current_state_of_execution: Current execution state
+        change_indicator: Indicator of plan changes
+        log: Log of events
     """
     plan_id: str
     observation_reflection: str
-    plan: Sequence[str]
+    plan: List[str]
     plan_reasoning: str
     current_state_of_execution: str
     change_indicator: Optional[str] = None
-    log: Sequence[dict] = field(default_factory=list)
+    log: Optional[List[Dict[str, Any]]] = None
 
 
-@dataclass(frozen=True)
-class LLPResponse:
-    """
-    Low-Level Planner (LLP) response from GAME API.
-    
+class LLPResponse(BaseModel):
+    """Low-level planning response from the GAME API.
+
     Attributes:
-        plan_id (str): Unique plan identifier
-        plan_reasoning (str): Reasoning behind the plan
-        situation_analysis (str): Analysis of current situation
-        plan (Sequence[str]): Sequence of planned steps
-        change_indicator (Optional[str]): Indicates state changes
-        reflection (Optional[str]): Reflection on execution
-        
-    Example:
-        >>> llp = LLPResponse(
-        ...     plan_id="123",
-        ...     plan_reasoning="Need temperature data",
-        ...     situation_analysis="API available",
-        ...     plan=["Call weather API", "Process data"]
-        ... )
+        plan_id: Unique identifier for the plan
+        plan_reasoning: Reasoning behind the plan
+        situation_analysis: Analysis of the current situation
+        plan: List of planned steps
+        change_indicator: Indicator of plan changes
+        reflection: Reflection on the plan
     """
     plan_id: str
     plan_reasoning: str
     situation_analysis: str
-    plan: Sequence[str]
+    plan: List[str]
     change_indicator: Optional[str] = None
     reflection: Optional[str] = None
 
 
-@dataclass(frozen=True)
-class CurrentTaskResponse:
-    """
-    Current task information from GAME API.
-    
+class CurrentTaskResponse(BaseModel):
+    """Response containing information about the current task.
+
     Attributes:
-        task (str): Current task description
-        task_reasoning (str): Reasoning for current task
-        location_id (str): Task location identifier
-        llp (Optional[LLPResponse]): Associated LLP response
-        
-    Example:
-        >>> task = CurrentTaskResponse(
-        ...     task="Get weather data",
-        ...     task_reasoning="Need current conditions",
-        ...     location_id="NYC",
-        ...     llp=llp_response
-        ... )
+        task: Description of the current task
+        task_reasoning: Reasoning behind the task
+        location_id: Identifier for the task location
+        llp: Low-level planning response
     """
     task: str
     task_reasoning: str
-    location_id: str = field(default="*not provided*")
+    location_id: Optional[str] = None
     llp: Optional[LLPResponse] = None
 
 
-@dataclass(frozen=True)
-class AgentStateResponse:
-    """
-    Agent state information from GAME API.
-    
+class AgentStateResponse(BaseModel):
+    """Response containing the current state of an agent.
+
     Attributes:
-        hlp (Optional[HLPResponse]): High-level planner response
-        current_task (Optional[CurrentTaskResponse]): Current task info
-        
-    Example:
-        >>> state = AgentStateResponse(
-        ...     hlp=hlp_response,
-        ...     current_task=task_response
-        ... )
+        hlp: High-level planning state
+        current_task: Current task state
     """
     hlp: Optional[HLPResponse] = None
     current_task: Optional[CurrentTaskResponse] = None
 
 
 class ActionResponse(BaseModel):
-    """
-    Response format from the GAME API when selecting an Action.
-    
+    """Response containing an action to be taken.
+
     Attributes:
-        action_type (ActionType): Type of action to perform
-        agent_state (AgentStateResponse): Current agent state
-        action_args (Optional[Dict[str, Any]]): Action arguments
-        
-    Example:
-        >>> response = ActionResponse(
-        ...     action_type=ActionType.CALL_FUNCTION,
-        ...     agent_state=agent_state,
-        ...     action_args={"function": "get_weather"}
-        ... )
+        action_type: Type of action to take
+        agent_state: Current state of the agent
+        action_args: Arguments for the action
     """
     action_type: ActionType
     agent_state: AgentStateResponse
-    action_args: Optional[Dict[str, Any]] = None
+    action_args: Dict[str, Any]

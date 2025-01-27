@@ -79,9 +79,9 @@ def test_function_result():
     assert result.info == {"value": 42}
 
 
-def get_test_value(value: str) -> Dict[str, Any]:
+def get_test_value(value: Dict[str, Any]) -> Dict[str, Any]:
     """Helper function for testing."""
-    return FunctionResultStatus.DONE, f"Got value: {value}", {"value": value}
+    return FunctionResultStatus.DONE, f"Got value: {value['value']}", {"value": value['value']}
 
 
 def test_function():
