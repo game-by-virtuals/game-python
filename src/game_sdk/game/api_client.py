@@ -13,6 +13,13 @@ from game_sdk.game.custom_types import ActionResponse, FunctionResult
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 
+def should_retry(exception):
+    """Determine if we should retry the request based on the exception type."""
+    if isinstance(exception, (AuthenticationError, ValidationError)):
+        return False
+    return isinstance(exception, (APIError, requests.exceptions.RequestException))
+
+
 class GameAPIClient:
     """Client for interacting with the GAME API.
 
@@ -25,7 +32,7 @@ class GameAPIClient:
         session (requests.Session): Reusable session for API requests
     """
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: Optional[str] = None):
         """Initialize the API client.
 
         Args:
@@ -44,13 +51,6 @@ class GameAPIClient:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         })
-
-    @staticmethod
-    def should_retry(exception):
-        """Determine if we should retry the request based on the exception type."""
-        if isinstance(exception, (AuthenticationError, ValidationError)):
-            return False
-        return isinstance(exception, (APIError, requests.exceptions.RequestException))
 
     @retry(
         stop=stop_after_attempt(3),
