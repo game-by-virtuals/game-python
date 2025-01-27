@@ -1,10 +1,101 @@
-*.pth
-*.env
-*#
-*~
-*.pyc
-*__pycache__
-*.json
+# Git Ignore File Guide
+# ---------------------
+# - Each line specifies a pattern for files/directories that Git should ignore
+# - '*' means "match any characters"
+# - A trailing '/' indicates a directory
+# - Lines starting with '#' are comments
+# - Patterns are matched relative to the location of the .gitignore file
+# - More specific rules override more general rules
+# - Use '!' to negate a pattern (include something that would otherwise be ignored)
 
-*.DS_Store
+# Development Environment Files
+## Python-specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pyi                 # Python interface stub files
+*.pth                 # PyTorch model files
+*#                    # Emacs temporary files
+*~                    # Backup files
+
+## Environment & Configuration
+*.env                 # Environment variable files
+.env                  # Root environment file
+venv/
+env/
+ENV/
+.env
+
+## IDE-specific (consolidated)
+.idea/                # JetBrains IDEs (IntelliJ, PyCharm, etc.)
+.vscode/             # Visual Studio Code
+*.swp               # Temporary files
+*.swo
+.DS_Store
+
+## Operating System Files
+# macOS
+.DS_Store
+*.DS_Store
+
+## Data & Output Files
+*.json               # JSON data files
+
+## Testing & Debugging
+coverage/           # Coverage report
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+*.iml              # IntelliJ Project files
+*.sublime-project  # Sublime Text Project files
+*.sublime-workspace # Sublime Text Workspace files
+.vscode/settings.json
+tests/__pycache__/
+tests/**/__pycache__/
+tests/.pytest_cache/
+tests/**/.pytest_cache/
+*.test
+
+## Documentation
+docs/_build/
+_build/
+
+## Jupyter Notebook
+.ipynb_checkpoints
+
+## GitHub specific
+.github/
+
+## Local development settings
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+## Misc
+*.swp               # Temporary files
