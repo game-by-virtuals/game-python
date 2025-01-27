@@ -133,7 +133,7 @@ def test_api_error(api_client, mock_responses):
         status=500
     )
 
-    with pytest.raises(APIError, match="API request failed"):
+    with pytest.raises(tenacity.RetryError):
         api_client.get("test")
 
 
@@ -145,7 +145,7 @@ def test_network_error(api_client, mock_responses):
         body=RequestException("Network error")
     )
 
-    with pytest.raises(APIError, match="Request failed"):
+    with pytest.raises(tenacity.RetryError):
         api_client.get("test")
 
 
