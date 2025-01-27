@@ -7,10 +7,11 @@ retry logic, and HTTP method wrappers.
 
 import pytest
 import responses
+import tenacity
 from requests.exceptions import HTTPError, RequestException
 from game_sdk.game.api_client import GameAPIClient
-from game_sdk.game.exceptions import APIError, AuthenticationError, ValidationError
 from game_sdk.game.config import config
+from game_sdk.game.exceptions import APIError, AuthenticationError, ValidationError
 
 
 @pytest.fixture
