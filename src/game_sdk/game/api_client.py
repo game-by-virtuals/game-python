@@ -48,7 +48,7 @@ class GameAPIClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type(APIError)
+        retry=retry_if_exception_type((APIError, requests.exceptions.RequestException))
     )
     def make_request(
         self,
@@ -74,7 +74,7 @@ class GameAPIClient:
             Dict[str, Any]: API response data
         """
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        
+
         try:
             response = self.session.request(
                 method=method,
@@ -82,18 +82,22 @@ class GameAPIClient:
                 json=data,
                 params=params
             )
-            
+
             response.raise_for_status()
             return response.json()
-            
+
         except requests.exceptions.HTTPError as e:
             if response.status_code == 401:
+                # Don't retry auth errors
                 raise AuthenticationError("Authentication failed") from e
             elif response.status_code == 422:
+                # Don't retry validation errors
                 raise ValidationError("Invalid request data") from e
             else:
+                # Retry other HTTP errors
                 raise APIError(f"API request failed: {str(e)}") from e
         except requests.exceptions.RequestException as e:
+            # Retry network errors
             raise APIError(f"Request failed: {str(e)}") from e
 
     def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
