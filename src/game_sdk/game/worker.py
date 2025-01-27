@@ -30,7 +30,7 @@ class Worker:
             raise ValueError("API key not set")
 
         self.description: str = description
-        self.instruction: str = instruction
+        self.instruction: Optional[str] = instruction
 
         # setup get state function and initial state
         self.get_state_fn = lambda function_result, current_state: {
@@ -50,10 +50,10 @@ class Worker:
         # # setup action space (functions/tools available to the worker)
         # check action space type - if not a dict
         if not isinstance(action_space, dict):
-            self.action_space = {
+            self.action_space: Dict[str, Function] = {
                 f.get_function_def()["fn_name"]: f for f in action_space}
         else:
-            self.action_space = action_space
+            self.action_space: Dict[str, Function] = action_space
 
         # initialize an agent instance for the worker
         self._agent_id: str = self.client.create_agent(
@@ -97,6 +97,15 @@ class Worker:
                 feedback_message="",
                 info={},
             )
+
+        # get observations from the state if present
+        if "observations" in self.state:
+            observations = {
+                "content": self.state["observations"],
+            }
+        else:
+            observations = None
+            
         # set up data payload
         data = {
             "environment": self.state,  # state (updated state)
@@ -107,6 +116,7 @@ class Worker:
                 function_result.model_dump(
                     exclude={'info'}) if function_result else None
             ),
+            "observations": observations
         }
 
         # make API call

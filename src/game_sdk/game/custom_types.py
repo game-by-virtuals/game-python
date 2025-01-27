@@ -36,7 +36,7 @@ class Function(BaseModel):
         return self.model_dump(exclude={'executable'})
 
     @staticmethod
-    def _default_executable(**kwargs) -> Tuple[FunctionResultStatus, str]:
+    def _default_executable(**kwargs) -> Tuple[FunctionResultStatus, str, dict]:
         """Default executable that does nothing"""
         return FunctionResultStatus.DONE, "Default implementation - no action taken", {}
     

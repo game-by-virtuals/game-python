@@ -116,11 +116,11 @@ def throw_fruit(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]
     fruits = {"apple", "banana", "orange", "pear", "mango", "grape"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No fruit specified", {}
+        return FunctionResultStatus.FAILED, "No fruit specified", {}
     
     if object.lower() in fruits:
         return FunctionResultStatus.DONE, f"Successfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a fruit", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a fruit", {}
 
 def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
@@ -129,11 +129,11 @@ def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, d
     furniture = {"chair", "table", "stool", "lamp", "vase", "cushion"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No furniture specified", {}
+        return FunctionResultStatus.FAILED, "No furniture specified", {}
     
     if object.lower() in furniture:
         return FunctionResultStatus.DONE, f"Powerfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a furniture item", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a furniture item", {}
 
 
 # create functions for each executable

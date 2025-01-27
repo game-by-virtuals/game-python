@@ -83,6 +83,13 @@ class Agent:
         # initialize and set up agent states
         self.agent_state = self.get_agent_state_fn(None, None)
 
+        # initialize observation
+        observation_content = self.agent_state["observations"] if "observations" in self.agent_state else None
+        self.observation = {
+            "content": observation_content,
+            "is_global": True,
+        }
+
         # create agent
         self.agent_id = self.client.create_agent(
             self.name, self.agent_description, self.agent_goal
@@ -168,6 +175,7 @@ class Agent:
                 function_result.model_dump(
                     exclude={'info'}) if function_result else None
             ),
+            "observations": self.observation,
             "version": "v2",
         }
 
@@ -223,8 +231,11 @@ class Agent:
                 self._session.function_result, self.worker_states[self.current_worker_id])
             self.worker_states[self.current_worker_id] = updated_worker_state
 
+            update_observation = "worker"
+
         elif action_response.action_type == ActionType.WAIT:
             print("Task ended completed or ended (not possible wiht current actions)")
+            update_observation = "task"
 
         elif action_response.action_type == ActionType.GO_TO:
             if not action_response.action_args:
@@ -233,7 +244,8 @@ class Agent:
             next_worker = action_response.action_args["location_id"]
             print(f"Next worker selected: {next_worker}")
             self.current_worker_id = next_worker
-
+            
+            update_observation = "worker"
         else:
             raise ValueError(
                 f"Unknown action type: {action_response.action_type}")
@@ -241,6 +253,30 @@ class Agent:
         # update agent state
         self.agent_state = self.get_agent_state_fn(
             self._session.function_result, self.agent_state)
+        
+        # update observation (saved state)
+        if update_observation == "task":
+            if "observations" in self.agent_state:
+                observation_content = self.agent_state["observations"]
+                self.observation = {
+                    "content": observation_content,
+                    "is_gloabl": True,
+                }
+            else:
+                self.observation = None
+        elif update_observation == "worker":
+            current_worker_state = self.worker_states[self.current_worker_id]
+            if "observations" in current_worker_state:
+                observation_content = current_worker_state["observations"]
+                self.observation = {
+                    "content": observation_content,
+                    "is_global": False,
+                }
+            else:
+                self.observation = None
+        else:
+            self.observation = None
+
 
     def run(self):
         self._session = Session()
