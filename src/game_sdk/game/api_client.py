@@ -45,7 +45,8 @@ class GameAPIClient:
             "Content-Type": "application/json"
         })
 
-    def should_retry(self, exception):
+    @staticmethod
+    def should_retry(exception):
         """Determine if we should retry the request based on the exception type."""
         if isinstance(exception, (AuthenticationError, ValidationError)):
             return False
@@ -54,7 +55,7 @@ class GameAPIClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception(self.should_retry)
+        retry=retry_if_exception(should_retry)
     )
     def make_request(
         self,
