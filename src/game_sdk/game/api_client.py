@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from game_sdk.game.config import config
 from game_sdk.game.exceptions import APIError, AuthenticationError, ValidationError
 from game_sdk.game.custom_types import ActionResponse, FunctionResult
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 
 class GameAPIClient:
@@ -45,10 +45,16 @@ class GameAPIClient:
             "Content-Type": "application/json"
         })
 
+    def should_retry(self, exception):
+        """Determine if we should retry the request based on the exception type."""
+        if isinstance(exception, (AuthenticationError, ValidationError)):
+            return False
+        return isinstance(exception, (APIError, requests.exceptions.RequestException))
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type((APIError, requests.exceptions.RequestException))
+        retry=retry_if_exception(self.should_retry)
     )
     def make_request(
         self,
