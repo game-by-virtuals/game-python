@@ -9,14 +9,20 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    """Configuration settings for the GAME SDK.
-
-    Attributes:
-        api_url (str): Base URL for API requests
-        default_timeout (int): Default timeout for API requests in seconds
-    """
-    api_url: str = "https://sdk.game.virtuals.io"
+    """Configuration class for the GAME SDK."""
+    api_url: str = "https://api.virtuals.io"
+    version: str = "v2"
     default_timeout: int = 30
+
+    @property
+    def base_url(self) -> str:
+        """Get the base URL for API calls."""
+        return self.api_url
+
+    @property
+    def version_prefix(self) -> str:
+        """Get the versioned API prefix."""
+        return f"{self.api_url}/{self.version}"
 
 
 # Global configuration instance
