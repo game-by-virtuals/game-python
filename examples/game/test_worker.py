@@ -28,7 +28,7 @@ def get_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
         # at the first step, initialise the state with just the init state
         new_state = init_state
     else:
-        # do something wiht the current state input and the function result info
+        # do something with the current state input and the function result info
         new_state = init_state # this is just an example where the state is static
 
     return new_state
