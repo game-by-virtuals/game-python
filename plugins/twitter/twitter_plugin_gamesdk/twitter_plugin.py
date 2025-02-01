@@ -67,6 +67,7 @@ class TwitterPlugin:
             raise ValueError("Twitter API credentials are required.")
         
         self.twitter_client: tweepy.Client = tweepy.Client(
+            bearer_token=credentials.get("bearerToken"),
             consumer_key=credentials.get("apiKey"),
             consumer_secret=credentials.get("apiSecretKey"),
             access_token=credentials.get("accessToken"),
