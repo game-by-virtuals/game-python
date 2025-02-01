@@ -26,13 +26,14 @@ class SOMRouterFunction(Function):
     async def _make_request(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Make request to StateOfMika API"""
         async with aiohttp.ClientSession() as session:
+            form_data = aiohttp.FormData()
+            for key, value in data.items():
+                form_data.add_field(key, str(value))
+
             async with session.post(
                 f"{self.base_url}/{endpoint}",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                },
-                json=data
+                headers={"X-API-Key": self.api_key},
+                data=form_data,
             ) as response:
                 if response.status == 200:
                     return await response.json()
