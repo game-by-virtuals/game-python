@@ -87,37 +87,37 @@ class OpacityVerificationWorker:
                 raise ValueError(f"Tweet with ID {tweet_id} not found")
 
             # If no referenced tweets, this is the original
-            referenced_tweets = getattr(
-                current_tweet.data, 'referenced_tweets', None
-            )
-            if not referenced_tweets:
+            if not hasattr(current_tweet.data, 'referenced_tweets'):
                 return {
-                    'id': str(current_tweet.data.id),  # Ensure ID is string
+                    'id': str(current_tweet.data.id),
                     'text': current_tweet.data.text
                 }
 
             # Follow the chain of replies to the original tweet
             while True:
-                referenced_tweets = current_tweet.data.get('referenced_tweets', [])
-                parent_ref = None
+                referenced_tweets = current_tweet.data.referenced_tweets
+                if not referenced_tweets:
+                    return {
+                        'id': str(current_tweet.data.id),
+                        'text': current_tweet.data.text
+                    }
 
                 # Look for the 'replied_to' reference
-                for ref in referenced_tweets:
-                    # Access as attribute instead of dict
-                    if ref.type == 'replied_to':
-                        parent_ref = ref
-                        break
+                parent_ref = next(
+                    (ref for ref in referenced_tweets if ref.type == 'replied_to'),
+                    None
+                )
 
                 # If no parent found, we've reached the original tweet
                 if not parent_ref:
                     return {
-                        'id': str(current_tweet.data.id),  # Ensure ID is string
+                        'id': str(current_tweet.data.id),
                         'text': current_tweet.data.text
                     }
 
                 # Get the parent tweet
                 current_tweet = self.twitter_plugin.twitter_client.get_tweet(
-                    str(parent_ref.id),  # Ensure ID is string
+                    str(parent_ref.id),
                     tweet_fields=['conversation_id', 'referenced_tweets', 'text'],
                     expansions=['referenced_tweets.id']
                 )
@@ -129,8 +129,7 @@ class OpacityVerificationWorker:
             error_msg = str(e).lower()
             if "unauthorized" in error_msg:
                 raise RuntimeError(
-                    "Twitter API authentication failed. "
-                    "Please check your credentials."
+                    "Twitter API authentication failed. Please check your credentials."
                 )
             elif "not found" in error_msg:
                 raise ValueError(f"Tweet with ID {tweet_id} does not exist")
@@ -194,6 +193,10 @@ class OpacityVerificationWorker:
                     {}
                 )
 
+            # Store both tweet IDs for replies
+            reply_tweet_id = tweet_id
+            original_tweet_id = original_tweet['id']
+            
             # Extract proof ID from original tweet
             try:
                 proof_data = self._extract_proof_from_tweet(original_tweet['text'])
@@ -239,25 +242,47 @@ class OpacityVerificationWorker:
                 verification_result = self.opacity_plugin.verify_proof(
                     {"proof": proof}
                 )
+                # Post replies before returning the result
+                try:
+                    reply_tweet_fn = self.twitter_plugin.get_function('reply_tweet')
+                    
+                    # Construct the reply message based on verification result
+                    if verification_result:
+                        reply_text = f"✅ Proof verification successful! The AI inference proof (ID: {proof_id}) has been validated."
+                    else:
+                        reply_text = f"❌ Proof verification failed. The provided proof (ID: {proof_id}) could not be validated."
 
+                    # Reply to the original tweet
+                    reply_tweet_fn(original_tweet_id, reply_text)
+
+                    # If the requesting tweet is different from the original, reply there too
+                    if reply_tweet_id != original_tweet_id:
+                        reply_text += "\n(Original proof found in parent tweet)"
+                        reply_tweet_fn(reply_tweet_id, reply_text)
+
+                except Exception as e:
+                    print(f"Error posting verification replies: {str(e)}")
+                    # Continue even if replies fail - at least return verification result
+
+                # Return the final result
                 return (
                     FunctionResultStatus.DONE,
-                    "Proof verification completed",
+                    "Proof verification completed and responses posted",
                     {
                         "valid": verification_result,
-                        "original_tweet_id": original_tweet['id'],
+                        "original_tweet_id": original_tweet_id,
                         "proof_id": proof_id
                     }
                 )
+
             except Exception as e:
                 error_msg = f"Error during proof verification: {str(e)}"
-                # Debug log
                 print(f"Verification error details: {error_msg}")
                 return (
                     FunctionResultStatus.FAILED,
                     error_msg,
                     {
-                        "original_tweet_id": original_tweet['id'],
+                        "original_tweet_id": original_tweet_id,
                         "proof_id": proof_data["proof_id"]
                     }
                 )
@@ -302,7 +327,8 @@ def main():
     worker = OpacityVerificationWorker()
 
     # Test with a real tweet ID
-    test_tweet_id = "1885493193614950476"  # Replace with actual tweet ID
+    test_tweet_id = 1885603754822820041
+    #"1885493193614950476"  # Replace with actual tweet ID
     worker.run(test_tweet_id)
 
 
