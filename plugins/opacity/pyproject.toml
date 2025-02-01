@@ -10,7 +10,6 @@ readme = "README.md"
 authors = [
     { name = "BitMind" }
 ]
-license = { file = "LICENSE" }
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
