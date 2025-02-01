@@ -213,3 +213,66 @@ class TwitterPlugin:
             self.logger.info(f"Successfully quoted tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to quote tweet {tweet_id}: {e}")
+    
+    def _get_user_from_handle(self, username) -> Optional[int]:
+        """
+        Extract the Twitter user ID from a profile URL using TwitterClient.
+        """
+        try:
+            # Fetch user information using the Twitter client
+            user = self.twitter_client.get_user(username=username)
+            return user['data']['id']
+        except tweepy.TweepyException as e:
+            self.logger.warning(f"Error fetching user data: {e}")
+            return None
+    
+    def _get_user_mentions(self, user_id: int, end_time=None, max_results: int = 10) -> Optional[List[Dict]]:
+        """
+        Fetch mentions for a specific user
+        """
+        try:
+            # Fetch mentions using the Twitter client
+            mentions = self.twitter_client.get_users_mentions(
+                id = user_id, 
+                end_time = end_time, 
+                max_results = max_results,
+                tweet_fields = ["id", "created_at", "text"],
+                expansions = ["attachments.media_keys"],
+                media_fields = ["url"]
+            )
+            if not mentions['data']:
+                return None
+            # Create a mapping of media keys to media URLs
+            media_dict = {}
+            media_list = mentions.get('includes', {}).get('media', [])
+            if media_list:
+                for media in media_list:
+                    media_dict[media['media_key']] = media['url']
+            result = []
+            for mention in mentions['data']:
+                media_keys = mention.get('attachments', {}).get('media_keys', [])
+                # Get image urls from media_dict
+                media_urls = []
+                for media_key in media_keys:
+                    media_urls.append(media_dict[media_key])
+                # Append tweet text and media URLs to the result
+                result.append({
+                    "id": mention["id"],
+                    "text": mention["text"],
+                    "media_urls": media_urls
+                })
+            return result
+        except tweepy.TweepyException as e:
+            self.logger.warning(f"Error fetching user mentions: {e}")
+            return []
+        
+    def _get_tweets(self, username: str, max_results: int = 100) -> Optional[List[Dict]]:
+        """
+        Fetch tweets for a specific user
+        """
+        try:
+            tweets = self.twitter_client.get_users_tweets(username, max_results=max_results)
+            return tweets
+        except tweepy.TweepyException as e:
+            self.logger.warning(f"Error fetching tweets: {e}")
+            return []
