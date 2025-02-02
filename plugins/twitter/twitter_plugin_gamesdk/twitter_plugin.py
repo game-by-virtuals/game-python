@@ -272,3 +272,14 @@ class TwitterPlugin:
         except tweepy.TweepyException as e:
             self.logger.warning(f"Error fetching user mentions: {e}")
             return []
+        
+    def _get_tweets(self, username: str, max_results: int = 100) -> Optional[List[Dict]]:
+        """
+        Fetch tweets for a specific user
+        """
+        try:
+            tweets = self.twitter_client.get_users_tweets(username, max_results=max_results)
+            return tweets
+        except tweepy.TweepyException as e:
+            self.logger.warning(f"Error fetching tweets: {e}")
+            return []
