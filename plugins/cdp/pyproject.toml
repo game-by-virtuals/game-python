@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cdp_game_sdk"
+version = "0.1.0"
+authors = [{ name = "GAME SDK" }]
+description = "Official Coinbase Developer Platform Plugin for GAME by Virtuals"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "game-sdk>=0.1.1",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "cdp-sdk>=0.16.0",
+    "pytest>=7.4.3",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.14.0",
+
+]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/coinbase"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cdp_game_sdk"]
