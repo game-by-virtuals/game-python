@@ -20,5 +20,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "compass.virtuals_sdk"
+    "compass.virtuals_sdk",
+    "web3"
 ]
