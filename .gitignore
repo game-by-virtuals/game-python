@@ -5,6 +5,7 @@
 *.pyc
 *__pycache__
 *.json
+.coverage
 
 *.DS_Store
 dist/
