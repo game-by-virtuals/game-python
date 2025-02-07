@@ -250,6 +250,36 @@ class ContentLLMTemplate:
             }
 
 
+@dataclass
+class Worker:
+    name: str
+    description: str
+    environment: Dict[str, Any]
+    
+    def toJson(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "environment": self.environment
+        }
+    
+    def __post_init__(self):
+        # Validate name
+        if not self.name:
+            raise ValueError("Name is required!")
+            
+        # Validate description
+        if not self.description:
+            raise ValueError("Description is required!")
+            
+        # Validate environment
+        if not isinstance(self.environment, dict):
+            raise ValueError('Environment must be a valid dictionary object. Example: { "NODE_ENV": "production" }')
+        
+        if self.environment is None:
+            raise ValueError('Environment cannot be null')
+
+
 class Agent:
     def __init__(
         self,
@@ -272,6 +302,7 @@ class Agent:
         self.templates: List[ContentLLMTemplate] = []
         self.tweet_usernames: List[str] = []
         self.task_description: str = task_description
+        self.workers: List[Worker] = []
         
 
     def set_goal(self, goal: str):
@@ -334,6 +365,14 @@ class Agent:
         self.custom_functions.append(custom_function)
 
         return True
+    
+    def add_worker(self, worker: Worker) -> bool:
+        try:
+            # Worker's __post_init__ will handle validation
+            self.workers.append(worker)
+            return True
+        except Exception as e:
+            raise ValueError(f"Failed to add worker: {str(e)}")
 
     def simulate_twitter(self, session_id: str):
         """
@@ -378,7 +417,11 @@ class Agent:
             self.enabled_functions,
             self.custom_functions,
             self.main_heartbeat,
-            self.reaction_heartbeat
+            self.reaction_heartbeat,
+            self.tweet_usernames,
+            self.templates,
+            self.task_description,
+            self.workers
         )
 
     def export(self) -> str:

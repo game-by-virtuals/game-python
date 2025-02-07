@@ -1,5 +1,5 @@
 import os
-from game_sdk.hosted_game.agent import Agent, Function, FunctionArgument, FunctionConfig, ContentLLMTemplate
+from game_sdk.hosted_game.agent import Agent, Function, FunctionArgument, FunctionConfig, ContentLLMTemplate,Worker
 
 agent = Agent(
     api_key=os.environ.get("VIRTUALS_API_KEY"),
@@ -95,6 +95,22 @@ This is the ongoing conversation history: {{conversationHistory}}.
         repetition_penalty=1.0,
         model="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
         type="REPLY"
+    )
+)
+
+agent.add_worker(
+    Worker(
+        name="worker-twitter",
+        description="worker for twitter",
+        environment={"NODE_ENV": "production"}
+    )
+)
+
+agent.add_worker(
+    Worker(
+        name="worker-twitter 123",
+        description="worker for twitter",
+        environment={"NODE_ENV": "production"}
     )
 )
 
