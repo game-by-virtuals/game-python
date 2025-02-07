@@ -11,113 +11,147 @@ import os
 from dotenv import load_dotenv
 import threading
 import time
+from datetime import datetime, timezone, timedelta
+import re
+import requests
 from opacity_game_sdk.opacity_plugin import OpacityPlugin
 from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+from opacity_worker import OpacityVerificationWorker
+
+CHECK_INTERVAL_MINUTES = 1
 
 # Load environment variables
 load_dotenv()
 
-# Debug environment variables
-print("Environment variables loaded:")
-print(f"TWITTER_BEARER_TOKEN: {os.environ.get('TWITTER_BEARER_TOKEN')}")
-print(f"GAME_API_KEY: {os.environ.get('GAME_API_KEY')}")
-print(f"OPACITY_PROVER_URL: {os.environ.get('OPACITY_PROVER_URL')}")
+# Initialize worker
+opacity_worker = OpacityVerificationWorker()
 
-game_api_key = os.environ.get("GAME_API_KEY")
-
-# Initialize plugins with proper error handling
-try:
-    twitter_options = {
-        "id": "opacity_twitter_plugin",
-        "name": "Opacity Twitter Plugin",
-        "description": "Twitter Plugin for Opacity verification.",
-        "credentials": {
-            "bearerToken": os.environ["TWITTER_BEARER_TOKEN"],
-            "apiKey": os.environ["TWITTER_API_KEY"],
-            "apiSecretKey": os.environ["TWITTER_API_SECRET_KEY"],
-            "accessToken": os.environ["TWITTER_ACCESS_TOKEN"],
-            "accessTokenSecret": os.environ["TWITTER_ACCESS_TOKEN_SECRET"],
-            "clientKey": os.environ["TWITTER_CLIENT_KEY"],
-            "clientSecret": os.environ["TWITTER_CLIENT_SECRET"],
-        },
-    }
-    twitter_plugin = TwitterPlugin(twitter_options)
-    opacity_plugin = OpacityPlugin()
-except Exception as e:
-    raise RuntimeError(f"Failed to initialize plugins: {str(e)}")
-
-def get_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
-    """Simple state management function that returns an empty dict as we don't track state."""
-    return {}
-
-def verify_mentioned_results(start_time: str, **kwargs) -> tuple:
-    """Function to process Twitter mentions and verify proofs.
-    
-    1. Get user mentions on Twitter
-    2. Extract and verify proofs from original tweets in threads
-    3. Reply with verification results
-    """
-    TWITTER_HANDLE = "opacityverifier"  # Replace with your bot's handle
-    
+def verify_mentioned_results(**kwargs) -> tuple:
+    """Function to process Twitter mentions and verify proofs."""
     try:
-        # Get user mentions
-        get_user_fn = twitter_plugin.get_function('get_user_from_handle')
-        user_id = get_user_fn(TWITTER_HANDLE)
-        get_user_mentions_fn = twitter_plugin.get_function('get_user_mentions')
-        mentions = get_user_mentions_fn(user_id, max_results=10)
+        # Calculate the cutoff time (5 minutes ago) with RFC3339 formatting
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=CHECK_INTERVAL_MINUTES)
+        formatted_time = cutoff_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f"[INFO] Processing mentions after: {formatted_time}")
+        
+        try:
+            # Get bot ID
+            me = opacity_worker.twitter_plugin.twitter_client.get_me()
+            if not me or not me.data:
+                print("[ERROR] Could not retrieve bot's user ID")
+                return FunctionResultStatus.FAILED, "Failed to get bot's user ID", {}
+            bot_id = me.data.id
+            
+            # Add delay between API calls
+            time.sleep(2)
 
+            # Get mentions
+            mentions = opacity_worker.twitter_plugin.twitter_client.get_users_mentions(
+                id=bot_id,
+                max_results=5,
+                tweet_fields=['id', 'created_at', 'text'],
+                start_time=formatted_time 
+            )
+        except Exception as e:
+            if "429" in str(e):
+                print("[WARN] Rate limit hit, waiting 60 seconds...")
+                time.sleep(60)
+                return FunctionResultStatus.FAILED, "Rate limit hit, please retry", {}
+            raise e
+        
+        print("got mentions")
+        print(f"Mentions type: {type(mentions)}")
+        print(f"Mentions data: {mentions}")
+        
         if not mentions:
-            return FunctionResultStatus.DONE, "No new mentions to process", {}
+            return FunctionResultStatus.DONE, "No mentions retrieved", {}
+        
+        # Access data through the Response object properly
+        mentions_data = mentions.data if hasattr(mentions, 'data') else None
+        
+        if not mentions_data:
+            return FunctionResultStatus.DONE, "No mentions data available", {}
         
         processed_count = 0
         verified_count = 0
-        
-        for mention in mentions:
-            tweet_id = mention.get('id')
+        skipped_count = 0
+
+        for mention in mentions_data:
+            if not hasattr(mention, 'id'):
+                print(f"Invalid mention data: {mention}")
+                continue
             
-            # Verify the tweet thread
+            tweet_time = datetime.fromisoformat(str(mention.created_at).replace('Z', '+00:00'))
+
+            # Skip tweets older than cutoff
+            if tweet_time < cutoff_time:
+                print(f"[INFO] Skipping tweet {mention.id} from {tweet_time.isoformat()} - too old")
+                skipped_count += 1
+                continue
+            
+            print("mention.id:")
+            print(mention.id)
+            tweet_id = int(mention.id)
+            print(f"\n[INFO] Processing mention tweet ID: {tweet_id} from {tweet_time.isoformat()}")
+            
+            time.sleep(5)
+
+            # Use the opacity worker to verify the tweet
             try:
-                status, message, result = opacity_plugin.verify_tweet_thread(tweet_id)
-                if status == FunctionResultStatus.DONE:
+                status, message, result = opacity_worker.verify_tweet_thread(str(tweet_id)) 
+                if status == FunctionResultStatus.DONE and result.get("valid", False):
                     verified_count += 1
+                print(f"[INFO] Verification result: {message}")
             except Exception as e:
-                print(f"Error verifying tweet {tweet_id}: {e}")
+                if "429" in str(e):
+                    print("[WARN] Rate limit hit during verification, waiting 60 seconds...")
+                    time.sleep(60)
+                    try:
+                        # One retry after rate limit wait
+                        status, message, result = opacity_worker.verify_tweet_thread(str(tweet_id))
+                        if status == FunctionResultStatus.DONE and result.get("valid", False):
+                            verified_count += 1
+                        print(f"[INFO] Retry verification result: {message}")
+                    except Exception as retry_e:
+                        print(f"[ERROR] Failed to verify tweet {tweet_id} on retry: {retry_e}")
+                        if "429" in str(retry_e):
+                            return FunctionResultStatus.FAILED, "Rate limit persists after retry", {}
+                else:
+                    print(f"[ERROR] Failed to verify tweet {tweet_id}: {e}")
             
             processed_count += 1
-            
-        return FunctionResultStatus.DONE, (
+        
+        result_message = (
             f"Processed {processed_count} mentions, "
-            f"verified {verified_count} proofs"
-        ), {}
+            f"verified {verified_count} proofs, "
+            f"skipped {skipped_count} old tweets"
+        )
+        print(f"\n[SUMMARY] {result_message}")
+        return FunctionResultStatus.DONE, result_message, {}
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return FunctionResultStatus.FAILED, (
-            f"Error encountered while processing mentions: {str(e)}"
-        ), {}
+        error_msg = f"Error encountered while processing mentions: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        if "429" in str(e):
+            time.sleep(60)
+        return FunctionResultStatus.FAILED, error_msg, {}
 
 # Action space with verification capability
 action_space = [
     Function(
         fn_name="verify_mentioned_results",
-        fn_description="Check Twitter mentions for results to verify",
-        args=[
-            Argument(
-                name="start_time",
-                type="string",
-                description="Start time for twitter API in YYYY-MM-DDTHH:mm:ssZ format"
-            )
-        ],
+        fn_description="Check Twitter mentions for Proof IDs to verify",
+        args=[],
         executable=verify_mentioned_results
     )
 ]
 
 # Create worker
 worker = Worker(
-    api_key=game_api_key,
+    api_key=opacity_worker.game_api_key,
     description="Processing Twitter mentions for Opacity verification requests.",
     instruction="Monitor Twitter mentions and verify AI inference results using Opacity proofs",
-    get_state_fn=get_state_fn,
+    get_state_fn=opacity_worker._get_state,
     action_space=action_space
 )
 
@@ -125,11 +159,12 @@ def check_mentions():
     """Periodically check for new mentions to process."""
     while True:
         try:
+            print("\n[INFO] Starting new mention check cycle...")
             worker.run("Check Twitter mentions for verification requests")
-            print("Waiting for next check cycle...")
-            time.sleep(1 * 60)  # Wait 15 minutes between checks
+            print("[INFO] Waiting for next check cycle...")
+            time.sleep(CHECK_INTERVAL_MINUTES * 60)  # Wait between checks
         except Exception as e:
-            print(f"Error in check_mentions loop: {e}")
+            print(f"[ERROR] Error in check_mentions loop: {e}")
             time.sleep(60)  # Wait a minute before retrying on error
 
 # Create mention checker thread
