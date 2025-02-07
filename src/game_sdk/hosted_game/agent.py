@@ -368,7 +368,6 @@ class Agent:
     
     def add_worker(self, worker: Worker) -> bool:
         try:
-            # Worker's __post_init__ will handle validation
             self.workers.append(worker)
             return True
         except Exception as e:
