@@ -1,6 +1,6 @@
 from game_sdk.game.worker import Worker
 from game_sdk.game.custom_types import FunctionResult
-from game_sdk.plugins.stateofmika.functions.router import SOMRouterFunction
+from stateofmika_plugin_gamesdk.functions.router import SOMRouter
 
 
 # Example state function
@@ -25,14 +25,14 @@ def get_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
 game_api_key = "your_game_api_key"
 
 # Create router function
-router_fn = SOMRouterFunction()
+router_fn = SOMRouter()
 
 # Create worker
 worker = Worker(
     api_key=game_api_key,
     description="An intelligent assistant that uses StateOfMika for routing queries",
     get_state_fn=get_state_fn,
-    action_space=[router_fn],
+    action_space=[router_fn.get_function()],
 )
 
 # Run example query

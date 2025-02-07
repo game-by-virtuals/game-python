@@ -3,10 +3,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "bittensor_game_sdk"
-version = "0.1.0"
-authors = [{ name = "BitMind Ai" }]
-description = "Official Bittensor Python SDK for GAME by Virtuals"
+name = "imagegen_game_sdk"
+version = "0.0.1"
+authors = [
+  { name = "Chinese Powered Labs"},
+]
+description = "Image generator for GAME by Virtuals"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
@@ -20,11 +22,14 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["game-sdk>=0.1.1", "requests>=2.31.0"]
-
-[project.urls]
-"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/allora"
-"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"
+dependencies = [
+  "game-sdk>=0.1.1",
+  "requests (>=2.32.3,<3.0.0)",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["bittensor_game_sdk"]
+packages = ["imagegen_game_sdk"]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/imagegen"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"

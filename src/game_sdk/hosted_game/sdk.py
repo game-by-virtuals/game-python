@@ -90,24 +90,34 @@ class GameSDK:
 
         return response.json()["data"]
 
-    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int):
+    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, task_description: str = None):
         """
         Simulate the agent configuration
         """
+        payload = {
+            "goal": goal,
+            "description": description,
+            "worldInfo": world_info,
+            "functions": functions,
+            "customFunctions": [x.toJson() for x in custom_functions],
+            "gameState": {
+                "mainHeartbeat": main_heartbeat,
+                "reactionHeartbeat": reaction_heartbeat,
+            },
+            "taskDescription": task_description
+        }
+        
+        if tweet_usernames is not None:
+            payload["tweetUsernames"] = tweet_usernames
+            
+        # Add templates to payload if provided
+        if templates:
+            payload["templates"] = [template.to_dict() for template in templates]   
+            
         response = requests.post(
             f"{self.api_url}/deploy",
             json={
-                "data": {
-                    "goal": goal,
-                    "description": description,
-                    "worldInfo": world_info,
-                    "functions": functions,
-                    "customFunctions": [x.toJson() for x in custom_functions],
-                    "gameState" : {
-                        "mainHeartbeat" : main_heartbeat,
-                        "reactionHeartbeat" : reaction_heartbeat,
-                    }
-                }
+                "data": payload
             },
             headers={"x-api-key": self.api_key}
         )

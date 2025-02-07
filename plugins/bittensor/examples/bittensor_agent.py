@@ -17,7 +17,7 @@ load_dotenv()
 print("Environment variables loaded:")
 print(f"TWITTER_BEARER_TOKEN: {os.environ.get('TWITTER_BEARER_TOKEN')}")
 print(f"GAME_API_KEY: {os.environ.get('GAME_API_KEY')}")
-print(f"BITMINDLABS_API_KEY: {os.environ.get('BITMINDLABS_API_KEY')}")
+print(f"BITMIND_API_KEY: {os.environ.get('BITMIND_API_KEY')}")
 
 game_api_key = os.environ.get("GAME_API_KEY")
 
@@ -115,7 +115,7 @@ def detect_tweeted_images(start_time: str, **kwargs) -> tuple:
     2. Pass image urls through Bitmind API to detect fakeness
     """
     print("start_time", start_time)
-    TWITTER_HANDLE = "seraphagent"
+    TWITTER_HANDLE = "seraphagent" # TODO: CHANGE TO YOUR TWITTER HANDLE
     try:
         res_twitter_mentions = get_twitter_user_mentions(username=TWITTER_HANDLE)
         # mock data if needed

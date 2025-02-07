@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "stateofmika_plugin_gamesdk"
 version = "0.1.0"
 authors = [{ name = "Alex Tan", email = "alex@chasm.net" }]
-description = "Officila State of Mika Python SDK for GAME by Virtuals"
+description = "Official State of Mika Python SDK for GAME by Virtuals"
 requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -20,7 +20,13 @@ classifiers = [
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = []
+dependencies = [
+    "aiohttp>=3.11.11",
+    "game-sdk>=0.1.1"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["stateofmika_plugin_gamesdk"]
 
 [project.urls]
 "Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/stateofmika"

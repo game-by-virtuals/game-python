@@ -12,6 +12,7 @@ Example:
         "name": "Twitter Bot",
         "description": "A Twitter bot that posts updates",
         "credentials": {
+            "bearerToken": "your_bearer_token",
             "apiKey": "your_api_key",
             "apiSecretKey": "your_api_secret",
             "accessToken": "your_access_token",
@@ -72,6 +73,7 @@ class TwitterPlugin:
             consumer_secret=credentials.get("apiSecretKey"),
             access_token=credentials.get("accessToken"),
             access_token_secret=credentials.get("accessTokenSecret"),
+            return_type = dict
         )
         # Define internal function mappings
         self._functions: Dict[str, Callable[..., Any]] = {
@@ -80,6 +82,8 @@ class TwitterPlugin:
             "post_tweet": self._post_tweet,
             "like_tweet": self._like_tweet,
             "quote_tweet": self._quote_tweet,
+            "get_user_from_handle": self._get_user_from_handle,
+            "get_user_mentions": self._get_user_mentions
         }
         
         # Configure logging
@@ -214,7 +218,7 @@ class TwitterPlugin:
             self.logger.info(f"Successfully quoted tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to quote tweet {tweet_id}: {e}")
-    
+
     def _get_user_from_handle(self, username) -> Optional[int]:
         """
         Extract the Twitter user ID from a profile URL using TwitterClient.
@@ -226,7 +230,7 @@ class TwitterPlugin:
         except tweepy.TweepyException as e:
             self.logger.warning(f"Error fetching user data: {e}")
             return None
-    
+
     def _get_user_mentions(self, user_id: int, end_time=None, max_results: int = 10) -> Optional[List[Dict]]:
         """
         Fetch mentions for a specific user
@@ -248,14 +252,16 @@ class TwitterPlugin:
             media_list = mentions.get('includes', {}).get('media', [])
             if media_list:
                 for media in media_list:
-                    media_dict[media['media_key']] = media['url']
+                    if 'url' in media:
+                        media_dict[media['media_key']] = media['url']
             result = []
             for mention in mentions['data']:
                 media_keys = mention.get('attachments', {}).get('media_keys', [])
                 # Get image urls from media_dict
                 media_urls = []
                 for media_key in media_keys:
-                    media_urls.append(media_dict[media_key])
+                    if media_key in media_dict:
+                        media_urls.append(media_dict[media_key])
                 # Append tweet text and media URLs to the result
                 result.append({
                     "id": mention["id"],
