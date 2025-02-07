@@ -32,6 +32,11 @@ agent.add_custom_function(
             platform="twitter",
             success_feedback="I found the best songs",
             error_feedback="I couldn't find the best songs",
+        ),
+        worker= Worker(
+            name="worker custom search internet",
+            description="worker for custom search internet",
+            environment={"NODE_ENV": "production"}
         )
     )
 )

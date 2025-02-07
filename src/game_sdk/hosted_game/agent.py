@@ -38,6 +38,34 @@ class FunctionConfig:
         self.headersString = json.dumps(self.headers, indent=4)
         self.payloadString = json.dumps(self.payload, indent=4)
 
+@dataclass
+class Worker:
+    name: str
+    description: str
+    environment: Dict[str, Any]
+    
+    def toJson(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "environment": self.environment
+        }
+    
+    def __post_init__(self):
+        # Validate name
+        if not self.name:
+            raise ValueError("Name is required!")
+            
+        # Validate description
+        if not self.description:
+            raise ValueError("Description is required!")
+            
+        # Validate environment
+        if not isinstance(self.environment, dict):
+            raise ValueError('Environment must be a valid dictionary object. Example: { "NODE_ENV": "production" }')
+        
+        if self.environment is None:
+            raise ValueError('Environment cannot be null')
 
 @dataclass
 class Function:
@@ -47,6 +75,7 @@ class Function:
     config: FunctionConfig
     hint: str = ""
     id: str = None
+    worker: Worker = None
 
     def __post_init__(self):
         self.id = self.id or str(uuid.uuid4())
@@ -58,7 +87,8 @@ class Function:
             "fn_description": self.fn_description,
             "args": [asdict(arg) for arg in self.args],
             "hint": self.hint,
-            "config": asdict(self.config)
+            "config": asdict(self.config),
+            "worker": self.worker.toJson()
         }
 
     def _validate_args(self, *args) -> Dict[str, Any]:
@@ -248,37 +278,6 @@ class ContentLLMTemplate:
                 "type": self.type,
                 "isSandbox": self.isSandbox
             }
-
-
-@dataclass
-class Worker:
-    name: str
-    description: str
-    environment: Dict[str, Any]
-    
-    def toJson(self):
-        return {
-            "name": self.name,
-            "description": self.description,
-            "environment": self.environment
-        }
-    
-    def __post_init__(self):
-        # Validate name
-        if not self.name:
-            raise ValueError("Name is required!")
-            
-        # Validate description
-        if not self.description:
-            raise ValueError("Description is required!")
-            
-        # Validate environment
-        if not isinstance(self.environment, dict):
-            raise ValueError('Environment must be a valid dictionary object. Example: { "NODE_ENV": "production" }')
-        
-        if self.environment is None:
-            raise ValueError('Environment cannot be null')
-
 
 class Agent:
     def __init__(
