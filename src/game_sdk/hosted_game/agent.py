@@ -442,3 +442,6 @@ class Agent:
         ))
 
         return True
+    
+    def reset_memory(self):
+        return self.game_sdk.reset_memory()

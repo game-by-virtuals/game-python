@@ -126,3 +126,12 @@ class GameSDK:
             raise Exception(response.json())
 
         return response.json()["data"]
+    
+    def reset_memory(self):
+        response = requests.get(
+            f"{self.api_url}/reset-session", headers={"x-api-key": self.api_key})
+
+        if (response.status_code != 200):
+            raise Exception("Failed to reset memory.")
+
+        return "Memory reset successfully."
