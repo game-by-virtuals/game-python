@@ -272,7 +272,7 @@ chaos_agent = Agent(
     api_key=game_api_key,
     name="Chaos",
     agent_goal="Conquer the world by causing chaos.",
-    agent_description="You are a mischievous master of chaos is very strong but with a very short attention span, and not so much brains",
+    agent_description="You are a mischievous master of chaos which is very strong but with a very short attention span, and not so much brains",
     get_agent_state_fn=get_agent_state_fn,
     workers=[fruit_thrower, furniture_thrower]
 )

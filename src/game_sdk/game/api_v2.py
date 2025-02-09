@@ -1,5 +1,7 @@
 import requests
 from typing import List, Dict
+import json
+from pprint import pprint
 
 class GAMEClientV2:
     def __init__(self, api_key: str):
@@ -27,6 +29,9 @@ class GAMEClientV2:
             headers=self.headers,
             json=payload
         )
+        # pprint(payload)
+        with open("api_payload_exports/create_agent_payload.json", "w") as json_file:
+            json.dump(payload, json_file, indent=4)
 
         response_json = response.json()
         if response.status_code != 200:
@@ -46,6 +51,9 @@ class GAMEClientV2:
                 ]
             }
         }
+        # pprint(payload)
+        with open("api_payload_exports/create_workers_payload.json", "w") as json_file:
+            json.dump(payload, json_file, indent=4)
 
         response = requests.post(
             f"{self.base_url}/maps",
@@ -74,6 +82,11 @@ class GAMEClientV2:
             headers=self.headers,
             json=payload
         )
+        print(f"url: {self.base_url}/agents/{agent_id}/tasks")
+        print(f"headers: {self.headers}")
+        pprint(payload)
+        # with open(f"api_payload_exports/set_worker_task_payload_agent_id_{agent_id}.json", "w") as json_file:
+        #     json.dump(payload, json_file, indent=4)
 
         response_json = response.json()
         if response.status_code != 200:
@@ -85,6 +98,9 @@ class GAMEClientV2:
         """
         API call to get worker actions (for standalone worker)
         """
+        # pprint(data)
+        with open(f"get_worker_action_data_agent_id_{agent_id}_submission_id_{submission_id}.json", "w") as json_file:
+            json.dump(data, json_file, indent=4)
         response = requests.post(
             f"{self.base_url}/agents/{agent_id}/tasks/{submission_id}/next",
             headers=self.headers,
@@ -92,6 +108,9 @@ class GAMEClientV2:
                 "data": data
             }
         )
+        # pprint(payload)
+        with open(f"api_payload_exports/get_worker_action_data_agent_id_{agent_id}_submission_id_{submission_id}.json", "w") as json_file:
+            json.dump(data, json_file, indent=4)
 
         response_json = response.json()
         if response.status_code != 200:
@@ -103,6 +122,10 @@ class GAMEClientV2:
         """
         API call to get agent actions/next step (for agent)
         """
+        # pprint(data)
+        with open(f"api_payload_exports/get_agent_action_data_agent_id_{agent_id}.json", "w") as json_file:
+            json.dump(data, json_file, indent=4)
+
         response = requests.post(
             f"{self.base_url}/agents/{agent_id}/actions",
             headers=self.headers,
