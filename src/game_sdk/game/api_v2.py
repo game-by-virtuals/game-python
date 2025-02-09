@@ -121,7 +121,7 @@ class GAMEClientV2:
         """
         API call to get agent actions/next step (for agent)
         """
-        print(f"create_workers_payload URL: {self.base_url}/agents/{agent_id}/actions")
+        print(f"get_agent_action URL: {self.base_url}/agents/{agent_id}/actions")
         pprint(self.headers)
         # pprint(data)
         with open(f"api_payload_exports/get_agent_action_data_agent_id_{agent_id}.json", "w") as json_file:
