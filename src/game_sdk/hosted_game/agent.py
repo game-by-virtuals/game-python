@@ -30,6 +30,7 @@ class FunctionConfig:
     headersString: str = "{}"  # Added field
     payloadString: str = "{}"  # Added field
     platform: str = None
+    costUSD: float = 0.0
 
     def __post_init__(self):
         self.headers = self.headers or {}
