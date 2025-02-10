@@ -38,6 +38,34 @@ class FunctionConfig:
         self.headersString = json.dumps(self.headers, indent=4)
         self.payloadString = json.dumps(self.payload, indent=4)
 
+@dataclass
+class Worker:
+    name: str
+    description: str
+    environment: Dict[str, Any]
+    
+    def toJson(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "environment": self.environment
+        }
+    
+    def __post_init__(self):
+        # Validate name
+        if not self.name:
+            raise ValueError("Name is required!")
+            
+        # Validate description
+        if not self.description:
+            raise ValueError("Description is required!")
+            
+        # Validate environment
+        if not isinstance(self.environment, dict):
+            raise ValueError('Environment must be a valid dictionary object. Example: { "NODE_ENV": "production" }')
+        
+        if self.environment is None:
+            raise ValueError('Environment cannot be null')
 
 @dataclass
 class Function:
@@ -47,6 +75,7 @@ class Function:
     config: FunctionConfig
     hint: str = ""
     id: str = None
+    worker: Worker = None
 
     def __post_init__(self):
         self.id = self.id or str(uuid.uuid4())
@@ -58,7 +87,8 @@ class Function:
             "fn_description": self.fn_description,
             "args": [asdict(arg) for arg in self.args],
             "hint": self.hint,
-            "config": asdict(self.config)
+            "config": asdict(self.config),
+            "worker": self.worker.toJson()
         }
 
     def _validate_args(self, *args) -> Dict[str, Any]:
@@ -249,7 +279,6 @@ class ContentLLMTemplate:
                 "isSandbox": self.isSandbox
             }
 
-
 class Agent:
     def __init__(
         self,
@@ -272,6 +301,7 @@ class Agent:
         self.templates: List[ContentLLMTemplate] = []
         self.tweet_usernames: List[str] = []
         self.task_description: str = task_description
+        self.workers: List[Worker] = []
         
 
     def set_goal(self, goal: str):
@@ -334,6 +364,13 @@ class Agent:
         self.custom_functions.append(custom_function)
 
         return True
+    
+    def add_worker(self, worker: Worker) -> bool:
+        try:
+            self.workers.append(worker)
+            return True
+        except Exception as e:
+            raise ValueError(f"Failed to add worker: {str(e)}")
 
     def simulate_twitter(self, session_id: str):
         """
@@ -378,7 +415,11 @@ class Agent:
             self.enabled_functions,
             self.custom_functions,
             self.main_heartbeat,
-            self.reaction_heartbeat
+            self.reaction_heartbeat,
+            self.tweet_usernames,
+            self.templates,
+            self.task_description,
+            self.workers
         )
 
     def export(self) -> str:

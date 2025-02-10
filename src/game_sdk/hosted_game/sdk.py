@@ -90,7 +90,7 @@ class GameSDK:
 
         return response.json()["data"]
 
-    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, task_description: str = None):
+    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, task_description: str = None, workers: list = None):
         """
         Simulate the agent configuration
         """
@@ -104,7 +104,8 @@ class GameSDK:
                 "mainHeartbeat": main_heartbeat,
                 "reactionHeartbeat": reaction_heartbeat,
             },
-            "taskDescription": task_description
+            "taskDescription": task_description,
+            "workers": [worker.toJson() for worker in workers]
         }
         
         if tweet_usernames is not None:
