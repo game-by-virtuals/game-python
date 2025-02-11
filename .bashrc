@@ -1,0 +1,2 @@
+export GAME_API_KEY="apt-2398df69ac1c8b7ac66cdcf22043908b"
+export VIRTUALS_API_KEY=
