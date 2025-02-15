@@ -23,7 +23,7 @@ def fruit_thrower_state_fn(function_result: FunctionResult, current_state: dict)
         if action == "throw":
             for obj in current_state["objects"]:
                 if obj["name"] == object:
-                    obj["destruction_level"] -= 1
+                    obj["destruction_level"] += 1
                     break
     return current_state
 
