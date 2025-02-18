@@ -1,5 +1,5 @@
 [project]
-name = "compasslabs_api_plugin_gamesdk"
+name = "compasslabs_api_game_sdk"
 version = "0.1.0"
 authors = [
   { name = "Ben Hack", email = "contact@compasslabs.ai" },
@@ -23,3 +23,10 @@ dependencies = [
     "compass.virtuals_sdk",
     "web3"
 ]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13" 
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/compass_api"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"
