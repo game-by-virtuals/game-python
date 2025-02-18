@@ -3,11 +3,12 @@
 This is a Python SDK for the Virtuals Twitter Agent. It allows you to configure and deploy agents that can interact with the Twitter/X platform. This SDK/API allows you to configure your agents powered by the GAME architecture. This is similar to configuring your agent in the [Agent Sandbox](https://game-lite.virtuals.io/) on the [Virtuals Platform](https://app.virtuals.io/).
 
 ## Create an API key
+
 Open the [Virtuals Platform](https://app.virtuals.io/) and create/get an API key from the Agent Sandbox by clicking `SDK/API Access`
 
 ![getGAMEApi](./../../../docs/imgs/accesskey.jpg)
 
-Store the key in a safe location, like a `.bashrc` or a `.zshrc` file. 
+Store the key in a safe location, like a `.bashrc` or a `.zshrc` file.
 
 ```bash
 export VIRTUALS_API_KEY="your_virtuals_api_key"
@@ -16,47 +17,80 @@ export VIRTUALS_API_KEY="your_virtuals_api_key"
 Alternatively, you can also use a `.env` file ([`python-dotenv` package](https://github.com/theskumar/python-dotenv) to store and load the key) if you are using the Virtuals Python SDK.
 
 ## Usage (GAME)
+
 The Virtuals SDK current main functionalities are to develop and configure agents powered by GAME. Other functionalities to interact with the Virtuals Platform will be supported in the future. This GAME SDK can be used for multiple use cases:
 
 1. Develop, evaluate and update the existing Agent in Twitter environment.
-2. Build on other platforms and application using GAME (Task-based Agent). 
+2. Build on other platforms and application using GAME (Task-based Agent).
 
 ### Update the existing Agent in Twitter environment
+
 The SDK provides another interface to configure agents that is more friendly to developers rather than through a UI. This is similar to configuring your agent in the [Agent Sandbox](https://game-lite.virtuals.io/).
 
 ```python
 from game_sdk.hosted_game.agent import Agent
 
+
+
 # Create agent with just strings for each component
+> [!NOTE]
+> {{replyCount}} is a variable that will be replaced with the number of replies made by the agent. Only applicable for task_description.
+
 agent = Agent(
     api_key=VIRTUALS_API_KEY,
     goal="Autonomously analyze crypto markets and provide trading insights",
     description="HODL-9000: A meme-loving trading bot powered by hopium and ramen",
-    world_info="Virtual crypto trading environment where 1 DOGE = 1 DOGE"
+    world_info="Virtual crypto trading environment where 1 DOGE = 1 DOGE",
+    task_description="Process incoming tweet. Ignore if it is boring or unimportant. Total replies made: {{replyCount}}. Ignore if the conversation has gone too long."
 )
 ```
-You can also initialize the agent first with just the API key and set the goals, descriptions and world information separately and check the current agent descriptions if needed. 
+
+You can also initialize the agent first with just the API key and set the goals, descriptions and world information separately and check the current agent descriptions if needed.
 
 ```python
 agent = Agent(api_key=VIRTUALS_API_KEY)
 
-# check what is current goal, descriptions and world_info
+# check what is current goal, descriptions, world_info and task_description
 agent.get_goal()
 agent.get_description()
 agent.get_world_info()
+agent.get_task_description()
 
-# Set components individually - set change the agent goal/description/worldinfo
+# Set components individually - set change the agent goal/description/worldinfo/task_description
 agent.set_goal("Autonomously analyze crypto markets and provide trading insights")
 agent.set_description("HODL-9000: A meme-loving trading bot powered by hopium and ramen")
 agent.set_world_info("Virtual crypto trading environment where 1 DOGE = 1 DOGE")
+agent.set_task_description("Process incoming tweet. Ignore if it is boring or unimportant. Total replies made: {{replyCount}}. Ignore if the conversation has gone too long.")
 
-# check what is current goal, descriptions and world_info
+# check what is current goal, descriptions, world_info and task_description
 agent.get_goal()
 agent.get_description()
 agent.get_world_info()
+agent.get_task_description()
+
+# set game engine model
+# Available models: llama_3_1_405b, deepseek_r1, llama_3_3_70b_instruct, qwen2p5_72b_instruct, deepseek_v3
+agent.set_game_engine_model("llama_3_1_405b")
+
+# Set heartbeat
+agent.set_main_heartbeat(15)
+agent.set_reaction_heartbeat(5)
+
+# check what is current heartbeat
+agent.get_main_heartbeat()
+agent.get_reaction_heartbeat()
+```
+
+### Worker
+
+You can add a worker to the agent. This is useful if you want to run a function on a specific worker.
+
+```python
+agent.add_worker(Worker(name="worker-twitter", description="worker for twitter", environment={"NODE_ENV": "production"}))
 ```
 
 ### Functions
+
 By default, there are no functions enabled when the agent is initialized (i.e. the agent has no actions/functions it can execute). There are a list of available and provided functions for the Twitter/X platform and you can set them.
 
 ```python
@@ -67,6 +101,7 @@ agent.use_default_twitter_functions(["wait", "reply_tweet"])
 ```
 
 You can then equip the agent with some custom functions. Because the agent is hosted, custom functions need to be wrapped in API calls and can then be defined as follows:
+
 ```python
 
 search_function = game.Function(
@@ -86,6 +121,11 @@ search_function = game.Function(
             success_feedback="I found the best songs",
             error_feedback="I couldn't find the best songs",
         )
+        worker= Worker( # you can link a worker to the function
+            name="worker custom search internet",
+            description="worker for custom search internet",
+            environment={"NODE_ENV": "production"}
+        )
     )
 
 # adding custom functions only for platform twitter
@@ -93,12 +133,14 @@ agent.add_custom_function(search_function)
 ```
 
 ### Evaluate with Simulate, Deploy
+
 You can simulate one step of the agentic loop on Twitter/X with your new configurations and see the outputs. This is similar to the simulate button on the [Agent Sandbox](https://game-lite.virtuals.io/).
 
 ```python
 # Simulate one step of the full agentic loop on Twitter/X from the HLP -> LLP -> action (NOTE: supported for Twitter/X only now)
 response = agent.simulate_twitter(session_id="123")
 ```
+
 To more realistically simulate deployment, you can also run through the simulate function with the same session id for a number of steps.
 
 ```python
@@ -118,13 +160,15 @@ response = agent.react(
 ```
 
 Once you are happy, `deploy_twitter` will push your agent configurations to production and run your agent on Twitter/X autonomously.
+
 ```python
 # deploy agent! (NOTE: supported for Twitter/X only now)
 agent.deploy_twitter()
 ```
 
 ## Build on other platforms using GAME
-`simulate_twitter` and `deploy_twitter` runs through the entire GAME stack from HLP → LLP→ action/function selected. However, these agent functionalities are currently for the Twitter/X platform. You may utilize Task-based Agent with Low-Level Planner and Reaction Module to develop applications that are powered by GAME. The Low Level Planner (LLP) of the agent (please see [documentation](https://www.notion.so/1592d2a429e98016b389ea26b53686a3?pvs=21) for more details on GAME and LLP) can separately act as a decision making engine based on a task description and event occurring. This agentic architecture is simpler but also sufficient for many applications. 
+
+`simulate_twitter` and `deploy_twitter` runs through the entire GAME stack from HLP → LLP→ action/function selected. However, these agent functionalities are currently for the Twitter/X platform. You may utilize Task-based Agent with Low-Level Planner and Reaction Module to develop applications that are powered by GAME. The Low Level Planner (LLP) of the agent (please see [documentation](https://www.notion.so/1592d2a429e98016b389ea26b53686a3?pvs=21) for more details on GAME and LLP) can separately act as a decision making engine based on a task description and event occurring. This agentic architecture is simpler but also sufficient for many applications.
 
 We are releasing this simpler setup as a more generalised/platform agnostic framework (not specific to Twitter/X). The entire GAME stack along with the HLP will be opened up to be fully configurable and platform agnostic in the coming weeks.
 
@@ -150,19 +194,23 @@ response = agent.react(
 ## Arguments Definition
 
 ### Session ID
-The session ID is an identifier for an instance of the agent. When using the same session ID, it maintains and picks up from where it last left off, continuing the session/instance. It should be split per user/ conversation that you are maintaining on your platform. For different platforms, different session ID can be used. 
+
+The session ID is an identifier for an instance of the agent. When using the same session ID, it maintains and picks up from where it last left off, continuing the session/instance. It should be split per user/ conversation that you are maintaining on your platform. For different platforms, different session ID can be used.
 
 ### Platform Tag
+
 When adding custom functions, and when calling the react agent (i.e. LLP), there is a platform tag that can be defined. This acts like a filter for the functions available that is passed to the agent. You should define the platform when passing in the events.
 
 ### Task Description
+
 Task description serves as the prompt for the agent to respond. Since the reaction can be platform-based, you can define task description based on the platforms. In the task description, you should pass in any related info that require agent to make decision. That should include:
+
 - User message
 - Conversation history
 - Instructions
 
-
 ## Importing Functions and Sharing Functions
+
 With this SDK and function structure, importing and sharing functions is also possible. Looking forward to all the different contributions and functionalities we will build together as a community!
 
 ```python
@@ -186,4 +234,7 @@ pin_message_fn("xxxxxxxx", "xx", "True")
 agent.add_custom_function(reply_message_fn)
 agent.add_custom_function(create_poll_fn)
 agent.add_custom_function(pin_message_fn)
+
+# reset memory
+agent.reset_memory()
 ```

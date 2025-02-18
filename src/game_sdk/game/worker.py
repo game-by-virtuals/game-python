@@ -49,6 +49,7 @@ class Worker:
         action_space: List[Function],
         # specific additional instruction for the worker (PROMPT)
         instruction: Optional[str] = "",
+        model_name: str = "Llama-3.1-405B-Instruct",
     ):
 
         if api_key.startswith("apt-"):
@@ -58,12 +59,14 @@ class Worker:
             
         self._api_key: str = api_key
 
+        self._model_name: str = model_name
+
         # checks
         if not self._api_key:
             raise ValueError("API key not set")
 
         self.description: str = description
-        self.instruction: str = instruction
+        self.instruction: Optional[str] = instruction
 
         # setup get state function and initial state
         self.get_state_fn = lambda function_result, current_state: {
@@ -83,10 +86,10 @@ class Worker:
         # # setup action space (functions/tools available to the worker)
         # check action space type - if not a dict
         if not isinstance(action_space, dict):
-            self.action_space = {
+            self.action_space: Dict[str, Function] = {
                 f.get_function_def()["fn_name"]: f for f in action_space}
         else:
-            self.action_space = action_space
+            self.action_space: Dict[str, Function] = action_space
 
         # initialize an agent instance for the worker
         self._agent_id: str = self.client.create_agent(
@@ -130,6 +133,15 @@ class Worker:
                 feedback_message="",
                 info={},
             )
+
+        # get observations from the state if present
+        if "observations" in self.state:
+            observations = {
+                "content": self.state["observations"],
+            }
+        else:
+            observations = None
+            
         # set up data payload
         data = {
             "environment": self.state,  # state (updated state)
@@ -140,13 +152,15 @@ class Worker:
                 function_result.model_dump(
                     exclude={'info'}) if function_result else None
             ),
+            "observations": observations
         }
 
         # make API call
         response = self.client.get_worker_action(
             self._agent_id, 
             self._submission_id, 
-            data
+            data,
+            model_name=self._model_name
         )
 
         return ActionResponse.model_validate(response)

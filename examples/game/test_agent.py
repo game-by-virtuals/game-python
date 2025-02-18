@@ -182,11 +182,11 @@ def throw_fruit(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]
     fruits = {"apple", "banana", "orange", "pear", "mango", "grape"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No fruit specified", {}
+        return FunctionResultStatus.FAILED, "No fruit specified", {}
     
     if object.lower() in fruits:
         return FunctionResultStatus.DONE, f"Successfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a fruit", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a fruit", {}
 
 
 def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
@@ -208,11 +208,11 @@ def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, d
     furniture = {"chair", "table", "stool", "lamp", "vase", "cushion"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No furniture specified", {}
+        return FunctionResultStatus.FAILED, "No furniture specified", {}
     
     if object.lower() in furniture:
         return FunctionResultStatus.DONE, f"Powerfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a furniture item", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a furniture item", {}
 
 
 # Create functions for each executable with detailed argument specifications
@@ -274,7 +274,8 @@ chaos_agent = Agent(
     agent_goal="Conquer the world by causing chaos.",
     agent_description="You are a mischievous master of chaos is very strong but with a very short attention span, and not so much brains",
     get_agent_state_fn=get_agent_state_fn,
-    workers=[fruit_thrower, furniture_thrower]
+    workers=[fruit_thrower, furniture_thrower],
+    model_name="Llama-3.1-405B-Instruct"
 )
 
 # # interact and instruct the worker to do something

@@ -7,7 +7,7 @@ The [Allora Network](https://allora.network) plugin seamlessly empowers G.A.M.E 
 - Get all available topics on Allora Network
 - Fetch inferences by topic ID
 
-## Avilable Functions
+## Available Functions
 
 1. `get_price_inference(asset: str, timeframe: str)` - Fetches the price inferences for the specified asset and a timeframe
 2. `get_all_topics()` - Retrieves all available topics on Allora Network

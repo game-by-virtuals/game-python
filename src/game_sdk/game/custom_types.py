@@ -80,12 +80,12 @@ class Function(BaseModel):
         return self.model_dump(exclude={'executable'})
 
     @staticmethod
-    def _default_executable(**kwargs) -> Tuple[FunctionResultStatus, str]:
+    def _default_executable(**kwargs) -> Tuple[FunctionResultStatus, str, dict]:
         """
         Default no-op implementation for functions.
 
         Returns:
-            Tuple[FunctionResultStatus, str]: Returns DONE status with a default message.
+            Tuple[FunctionResultStatus, str, dict]: Returns DONE status with a default message.
         """
         return FunctionResultStatus.DONE, "Default implementation - no action taken", {}
     
@@ -238,3 +238,28 @@ class ActionResponse(BaseModel):
     action_type: ActionType
     agent_state: AgentStateResponse
     action_args: Optional[Dict[str, Any]] = None
+
+
+class ChatActionRequest(BaseModel):
+    fn_name: str
+    args: Dict[str, Any]
+    id: str
+
+class GameChatResponse(BaseModel):
+    message: Optional[str] = Field(default=None)
+    is_finished: bool = Field(default=False)
+    function_call: Optional[ChatActionRequest] = Field(default=None)
+
+class AgentMessage(BaseModel):
+    message: str
+    chat_id: str
+
+class FunctionCallResponse(BaseModel):
+    fn_name: str
+    fn_args: Dict[str, Any]
+    result: FunctionResult
+
+class ChatResponse(BaseModel):
+    message: str
+    is_finished: bool
+    function_call: Optional[FunctionCallResponse] = None

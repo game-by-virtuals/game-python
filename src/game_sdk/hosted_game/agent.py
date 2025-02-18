@@ -1,6 +1,5 @@
 from typing import List, Any, Dict, Optional, Union, Set
 from dataclasses import dataclass, asdict
-from string import Template
 import json
 import uuid
 import requests
@@ -84,9 +83,9 @@ class Function:
 
     def _interpolate_template(self, template_str: str, values: Dict[str, Any]) -> str:
         """Interpolate a template string with given values"""
-        # Convert Template-style placeholders ({{var}}) to Python style ($var)
+        # Convert ContentLLMTemplate-style placeholders ({{var}}) to Python style ($var)
         python_style = template_str.replace('{{', '$').replace('}}', '')
-        return Template(python_style).safe_substitute(values)
+        return ContentLLMTemplate(python_style).safe_substitute(values)
 
     def _prepare_request(self, arg_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare the request configuration with interpolated values"""
@@ -153,6 +152,98 @@ class Function:
                 )
             raise requests.exceptions.HTTPError(f"Request failed: {error_msg}")
 
+@dataclass
+class ContentLLMTemplate:
+    template_type: str
+    system_prompt: str = None
+    sys_prompt_response_format: List[int] = None
+    model: str = "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
+    temperature: float = 1.0
+    user_prompt: str = None
+    top_k: float = 50.0
+    top_p: float = 0.7
+    repetition_penalty: float = 1.0
+    type: str = None
+    isSandbox: bool = False
+
+    def _validate_fields(self):
+        """Validate all template fields and their values"""
+        # Validate required fields
+        if not self.template_type:
+            raise ValueError("template_type is required")
+        
+        if self.template_type  not in ["POST", "REPLY", "SHARED", "TWITTER_START_SYSTEM_PROMPT", "TWITTER_END_SYSTEM_PROMPT"]:
+            raise ValueError(f"{self.template_type} is invalid, valid types are POST, REPLY, SHARED, TWITTER_START_SYSTEM_PROMPT, TWITTER_END_SYSTEM_PROMPT")
+        
+        # Set default values based on template_type
+        if self.template_type in ["POST", "REPLY"]:
+            if not self.user_prompt:
+                raise ValueError("user_prompt is required")
+            # Common settings for POST and REPLY
+            self.sys_prompt_response_format = self.sys_prompt_response_format or [10, 20, 40, 60, 80]
+            self.temperature = self.temperature or 1.0
+            self.top_k = self.top_k or 50.0
+            self.top_p = self.top_p or 0.7
+            self.repetition_penalty = self.repetition_penalty or 1.0
+            self.model = self.model or "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
+            self.type = self.template_type
+            self.isSandbox = False
+            self.userPrompt = self.user_prompt or ""
+                            
+        elif self.template_type in ["TWITTER_START_SYSTEM_PROMPT", "TWITTER_END_SYSTEM_PROMPT", "SHARED"]:
+            if not self.system_prompt:
+                raise ValueError("system_prompt is required")
+            self.sys_prompt_response_format = []
+        
+        # Validate sys_prompt_response_format type and values
+        if self.sys_prompt_response_format is not None:
+            if not isinstance(self.sys_prompt_response_format, list):
+                raise TypeError("sys_prompt_response_format must be a list of integers")
+            for num in self.sys_prompt_response_format:
+                if not isinstance(num, int) or num < 10 or num > 80:
+                    raise ValueError("sys_prompt_response_format values must be integers between 10 and 80")
+
+        # Validate numeric ranges
+        if not 0.1 <= self.temperature <= 2.0:
+            raise ValueError("temperature must be between 0.0 and 2.0")
+        if not 0.1 <= self.top_p <= 1.0:
+            raise ValueError("top_p must be between 0.1 and 1.0")
+        if not 1 <= self.top_k <= 100:
+            raise ValueError("top_k must be between 1 and 100")
+        if not 0.1 <= self.repetition_penalty <= 2.0:
+            raise ValueError("repetition_penalty must be greater than or equal to 1.0")
+
+    def __post_init__(self):
+        self._validate_fields()
+        
+        # Convert numeric values to proper type
+        self.temperature = float(self.temperature)
+        self.top_k = float(self.top_k)
+        self.top_p = float(self.top_p)
+        self.repetition_penalty = float(self.repetition_penalty)
+
+    def to_dict(self) -> dict:
+        """Convert template to dictionary format for API submission"""
+        if self.template_type in ["SHARED", "TWITTER_START_SYSTEM_PROMPT", "TWITTER_END_SYSTEM_PROMPT"]:
+            return {
+                "templateType": self.template_type,
+                "systemPrompt": self.system_prompt,
+                "sysPromptResponseFormat": self.sys_prompt_response_format 
+            }
+        else:
+            return {
+                "templateType": self.template_type,
+                "sysPromptResponseFormat": self.sys_prompt_response_format,
+                "model": self.model,
+                "temperature": self.temperature,
+                "userPrompt": self.user_prompt,
+                "topK": self.top_k,
+                "topP": self.top_p,
+                "repetitionPenalty": self.repetition_penalty,
+                "type": self.type,
+                "isSandbox": self.isSandbox
+            }
+
 
 class Agent:
     def __init__(
@@ -162,7 +253,9 @@ class Agent:
         description: str = "",
         world_info: str = "",
         main_heartbeat: int = 15,
-        reaction_heartbeat: int = 5
+        reaction_heartbeat: int = 5,
+        task_description: str = "",
+        game_engine_model: str = "llama_3_1_405b"
     ):
         self.game_sdk = sdk.GameSDK(api_key)
         self.goal = goal
@@ -172,6 +265,10 @@ class Agent:
         self.custom_functions: List[Function] = []
         self.main_heartbeat = main_heartbeat
         self.reaction_heartbeat = reaction_heartbeat
+        self.templates: List[ContentLLMTemplate] = []
+        self.tweet_usernames: List[str] = []
+        self.task_description: str = task_description
+        self.game_engine_model: str = game_engine_model
 
     def set_goal(self, goal: str):
         self.goal = goal
@@ -192,6 +289,21 @@ class Agent:
     def set_reaction_heartbeat(self, reaction_heartbeat: int):
         self.reaction_heartbeat = reaction_heartbeat
         return True
+    
+    def set_task_description(self, task_description: str):
+        self.task_description = task_description
+        return True
+    
+    def set_game_engine_model(self, game_engine_model: str):
+        # Available models: llama_3_1_405b, deepseek_r1, llama_3_3_70b_instruct, qwen2p5_72b_instruct, deepseek_v3
+        self.game_engine_model = game_engine_model
+        return True
+    
+    def get_task_description(self) -> str:
+        return self.task_description
+    
+    def get_game_engine_model(self) -> str:
+        return self.game_engine_model
 
     def get_goal(self) -> str:
         return self.goal
@@ -231,7 +343,7 @@ class Agent:
         """
         Simulate the agent configuration for Twitter
         """
-        return self.game_sdk.simulate(
+        resp =  self.game_sdk.simulate(
             session_id,
             self.goal,
             self.description,
@@ -239,6 +351,8 @@ class Agent:
             self.enabled_functions,
             self.custom_functions
         )
+        
+        return resp
 
     def react(self, session_id: str, platform: str, tweet_id: str = None, event: str = None, task: str = None):
         """
@@ -268,7 +382,10 @@ class Agent:
             self.enabled_functions,
             self.custom_functions,
             self.main_heartbeat,
-            self.reaction_heartbeat
+            self.reaction_heartbeat,
+            self.tweet_usernames,
+            self.templates,
+            self.game_engine_model
         )
 
     def export(self) -> str:
@@ -297,3 +414,41 @@ class Agent:
             f.write(agent_json)
 
         return agent_json
+    
+    def add_template(self, template: ContentLLMTemplate) -> bool:
+        """Add a template to the agent"""
+        self.templates.append(template)
+        return True
+    
+    def get_templates(self) -> List[ContentLLMTemplate]:
+        """Get all templates"""
+        return self.templates
+    
+    def add_share_template(
+        self,
+        start_system_prompt: str,
+        shared_prompt: str,
+        end_system_prompt: str
+    ) -> bool:
+        self.add_template(ContentLLMTemplate(
+            template_type="TWITTER_START_SYSTEM_PROMPT",
+            system_prompt=start_system_prompt,
+            sys_prompt_response_format=[]
+        ))
+
+        self.add_template(ContentLLMTemplate(
+            template_type="SHARED",
+            system_prompt=shared_prompt,
+            sys_prompt_response_format=[]
+        ))
+
+        self.add_template(ContentLLMTemplate(
+            template_type="TWITTER_END_SYSTEM_PROMPT",
+            system_prompt=end_system_prompt,
+            sys_prompt_response_format=[]
+        ))
+
+        return True
+    
+    def reset_memory(self):
+        return self.game_sdk.reset_memory()

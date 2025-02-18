@@ -7,6 +7,7 @@ options = {
     "name": "Test Twitter Worker",
     "description": "An example Twitter Plugin for testing.",
     "credentials": {
+        "bearerToken": os.environ.get("TWITTER_BEARER_TOKEN"),
         "apiKey": os.environ.get("TWITTER_API_KEY"),
         "apiSecretKey": os.environ.get("TWITTER_API_SECRET_KEY"),
         "accessToken": os.environ.get("TWITTER_ACCESS_TOKEN"),
@@ -46,3 +47,17 @@ print("\nRunning Test Case 5: Get Metrics")
 get_metrics_fn = twitter_plugin.get_function('get_metrics')
 metrics = get_metrics_fn()
 print("Metrics:", metrics)
+
+# Test case 6: Get User From Handle
+print("\nRunning Test Case 6: Get User From Handle")
+get_user_fn = twitter_plugin.get_function('get_user_from_handle')
+user_id = get_user_fn('celesteanglm')
+print("user_id:", user_id)
+
+# Test case 7: Get User Mentions
+print("\nRunning Test Case 7: Get User Mentions")
+get_user_fn = twitter_plugin.get_function("get_user_from_handle")
+user_id = get_user_fn("GAME_Virtuals")
+get_user_mentions_fn = twitter_plugin.get_function("get_user_mentions")
+user_mentions = get_user_mentions_fn(user_id, max_results=100)
+print("user_mentions:", user_mentions)

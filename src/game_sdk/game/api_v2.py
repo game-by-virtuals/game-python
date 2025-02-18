@@ -1,6 +1,4 @@
 import requests
-from typing import List
-
 from typing import List, Dict
 
 class GAMEClientV2:
@@ -30,11 +28,7 @@ class GAMEClientV2:
             json=payload
         )
 
-        response_json = response.json()
-        if response.status_code != 200:
-            raise ValueError(f"Failed to post data: {response_json}")
-
-        return response_json["data"]["id"]
+        return self._get_response_body(response)["id"]
 
     def create_workers(self, workers: List) -> str:
         """
@@ -55,11 +49,7 @@ class GAMEClientV2:
             json=payload
         )
 
-        response_json = response.json()
-        if response.status_code != 200:
-            raise ValueError(f"Failed to post data: {response_json}")
-
-        return response_json["data"]["id"]
+        return self._get_response_body(response)["id"]
 
     def set_worker_task(self, agent_id: str, task: str) -> Dict:
         """
@@ -77,44 +67,102 @@ class GAMEClientV2:
             json=payload
         )
 
-        response_json = response.json()
-        if response.status_code != 200:
-            raise ValueError(f"Failed to post data: {response_json}")
+        return self._get_response_body(response)
 
-        return response_json["data"]
-
-    def get_worker_action(self, agent_id: str, submission_id: str, data: dict) -> Dict:
+    def get_worker_action(self, agent_id: str, submission_id: str, data: dict, model_name: str) -> Dict:
         """
         API call to get worker actions (for standalone worker)
         """
         response = requests.post(
             f"{self.base_url}/agents/{agent_id}/tasks/{submission_id}/next",
-            headers=self.headers,
+            headers=self.headers | {"model_name": model_name},
             json={
                 "data": data
             }
         )
 
-        response_json = response.json()
         if response.status_code != 200:
-            raise ValueError(f"Failed to post data: {response_json}")
+            raise ValueError(f"Failed to get worker action (status {response.status_code}). Response: {response.text}")
+
+        response_json = response.json()
 
         return response_json["data"]
 
-    def get_agent_action(self, agent_id: str, data: dict) -> Dict:
+    def get_agent_action(self, agent_id: str, data: dict, model_name: str) -> Dict:
         """
         API call to get agent actions/next step (for agent)
         """
         response = requests.post(
             f"{self.base_url}/agents/{agent_id}/actions",
+            headers=self.headers | {"model_name": model_name},
+            json={
+                "data": data
+            }
+        )
+
+        if response.status_code != 200:
+            raise ValueError(f"Failed to get agent action (status {response.status_code}). Response: {response.text}")
+
+        response_json = response.json()
+
+        return response_json["data"]
+    
+    def create_chat(self, data: dict) -> str:
+        response = requests.post(
+            f"{self.base_url}/conversation",
+            headers=self.headers,
+            json={
+                "data": data
+            }
+        )
+        
+        chat_id = self._get_response_body(response).get("conversation_id")
+        if not chat_id:
+            raise Exception("Agent did not return a conversation_id for the chat.")
+        return chat_id
+    
+    def update_chat(self, conversation_id: str, data: dict) -> dict:
+        response = requests.post(
+            f"{self.base_url}/conversation/{conversation_id}/next",
+            headers=self.headers,
+            json={
+                "data": data
+            }
+        )
+        
+        if response.status_code != 200:
+            raise ValueError(f"Failed to update conversation (status {response.status_code}). Response: {response.text}")
+
+        response_json = response.json()
+
+        return response_json["data"]
+    
+    def report_function(self, conversation_id: str, data: dict) -> dict:
+        response = requests.post(
+            f"{self.base_url}/conversation/{conversation_id}/function/result",
             headers=self.headers,
             json={
                 "data": data
             }
         )
 
-        response_json = response.json()
+        return self._get_response_body(response)
+    
+    def end_chat(self, conversation_id: str, data: dict) -> dict:
+        response = requests.post(
+            f"{self.base_url}/conversation/{conversation_id}/end",
+            headers=self.headers,
+            json={
+                "data": data
+            }
+        )
+
+        return self._get_response_body(response)
+    
+    def _get_response_body(self, response: requests.Response) -> dict:
         if response.status_code != 200:
-            raise ValueError(f"Failed to post data: {response_json}")
+            raise ValueError(f"Failed to get response body (status {response.status_code}). Response: {response.text}")
+
+        response_json = response.json()
 
         return response_json["data"]

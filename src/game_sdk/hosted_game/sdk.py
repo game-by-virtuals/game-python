@@ -90,24 +90,34 @@ class GameSDK:
 
         return response.json()["data"]
 
-    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int):
+    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, game_engine_model: str = "llama_3_1_405b"):
         """
         Simulate the agent configuration
         """
+        payload = {
+            "goal": goal,
+            "description": description,
+            "worldInfo": world_info,
+            "functions": functions,
+            "customFunctions": [x.toJson() for x in custom_functions],
+            "gameState": {
+                "mainHeartbeat": main_heartbeat,
+                "reactionHeartbeat": reaction_heartbeat,
+            },
+            "gameEngineModel": game_engine_model
+        }
+            
+        if tweet_usernames is not None:
+            payload["tweetUsernames"] = tweet_usernames
+            
+        # Add templates to payload if provided
+        if templates:
+            payload["templates"] = [template.to_dict() for template in templates]   
+            
         response = requests.post(
             f"{self.api_url}/deploy",
             json={
-                "data": {
-                    "goal": goal,
-                    "description": description,
-                    "worldInfo": world_info,
-                    "functions": functions,
-                    "customFunctions": [x.toJson() for x in custom_functions],
-                    "gameState" : {
-                        "mainHeartbeat" : main_heartbeat,
-                        "reactionHeartbeat" : reaction_heartbeat,
-                    }
-                }
+                "data": payload
             },
             headers={"x-api-key": self.api_key}
         )
@@ -116,3 +126,12 @@ class GameSDK:
             raise Exception(response.json())
 
         return response.json()["data"]
+    
+    def reset_memory(self):
+        response = requests.get(
+            f"{self.api_url}/reset-session", headers={"x-api-key": self.api_key})
+
+        if (response.status_code != 200):
+            raise Exception("Failed to reset memory.")
+
+        return "Memory reset successfully."
