@@ -148,7 +148,7 @@ class TwitterPlugin:
             }
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to fetch metrics: {e}")
-            return {}
+            return e
 
     def _reply_tweet(self, tweet_id: int, reply: str) -> None:
         """
@@ -166,6 +166,7 @@ class TwitterPlugin:
             self.logger.info(f"Successfully replied to tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to reply to tweet {tweet_id}: {e}")
+            return e
 
     def _post_tweet(self, tweet: str) -> Dict[str, Any]:
         """
@@ -185,6 +186,7 @@ class TwitterPlugin:
             self.logger.info("Tweet posted successfully.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to post tweet: {e}")
+            return e
 
     def _like_tweet(self, tweet_id: int) -> None:
         """
@@ -201,6 +203,7 @@ class TwitterPlugin:
             self.logger.info(f"Tweet {tweet_id} liked successfully.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to like tweet {tweet_id}: {e}")
+            return e
 
     def _quote_tweet(self, tweet_id: int, quote: str) -> None:
         """
@@ -218,6 +221,7 @@ class TwitterPlugin:
             self.logger.info(f"Successfully quoted tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to quote tweet {tweet_id}: {e}")
+            return e
 
     def _get_user_from_handle(self, username) -> Optional[int]:
         """
@@ -229,7 +233,7 @@ class TwitterPlugin:
             return user['data']['id']
         except tweepy.TweepyException as e:
             self.logger.warning(f"Error fetching user data: {e}")
-            return None
+            return e
 
     def _get_user_mentions(self, user_id: int, end_time=None, max_results: int = 10) -> Optional[List[Dict]]:
         """
@@ -271,7 +275,7 @@ class TwitterPlugin:
             return result
         except tweepy.TweepyException as e:
             self.logger.warning(f"Error fetching user mentions: {e}")
-            return []
+            return e
         
     def _get_tweets(self, username: str, max_results: int = 100) -> Optional[List[Dict]]:
         """
@@ -282,4 +286,4 @@ class TwitterPlugin:
             return tweets
         except tweepy.TweepyException as e:
             self.logger.warning(f"Error fetching tweets: {e}")
-            return []
+            return e
