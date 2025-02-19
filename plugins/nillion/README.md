@@ -14,4 +14,7 @@ pip install -e plugins/nillion
 Set up your environment variables in a `.env` file:
 
 ```env
+NILLION_SECRET_KEY=your_nillion_secret_key
+NILLION_ORG_ID=your_nillion_org_id
+OPENAI_API_KEY=your_openai_api_key
 ```

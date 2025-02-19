@@ -1,18 +1,24 @@
 import jwt
-import requests
+import json
 import nilql
 import os
+import re
+import requests
 import time
 import uuid
 
-from jsonschema import Draft7Validator, validators
+from collections import deque, defaultdict
 from ecdsa import SECP256k1, SigningKey
+from jsonschema import Draft7Validator, validators
 from langchain_openai import ChatOpenAI
 from typing import Any, Generator
 
-# from collections import deque, defaultdict
-# import json
-# import re
+from .schemas import (
+    NillionCreateSchemaInput,
+    NillionLookupSchemaInput,
+    NillionDataUploadInput,
+    NillionDataDownloadInput,
+)
 
 class NillionPlugin:
     """
@@ -25,11 +31,6 @@ class NillionPlugin:
         self.name: str = "Nillion Plugin"
         self.secret_key = os.getenv("NILLION_SECRET_KEY")
         self.org_did = os.getenv("NILLION_ORG_ID")
-        self.key = None
-        self.nodes = None
-        
-    def initialize(self):
-        """Initialize the plugin"""
         if not self.secret_key:
             raise ValueError("NILLION_SECRET_KEY is not configured.")
         if not self.org_did:
@@ -39,7 +40,7 @@ class NillionPlugin:
 
         """Initialize config with JWTs signed with ES256K for multiple node_ids; Add cluster key."""
         response = requests.post(
-            "https://sv-sda-registration.replit.app/api/config",
+            "https://secret-vault-registration.replit.app/api/config",
             headers={
                 "Content-Type": "application/json",
             },
@@ -183,7 +184,6 @@ class NillionPlugin:
             tuple[str, dict]: The schema_uuid and the corresponding schema definition
         """
         try:
-
             validated_args = NillionCreateSchemaInput(**args)
             print(f"fn:create_schema [{validated_args.schema_description}]")
 
@@ -253,7 +253,6 @@ class NillionPlugin:
             response = llm.invoke(schema_prompt)
 
             schema = json.loads(str(response.content))
-
             schema["_id"] = str(uuid.uuid4())
             schema["owner"] = self.org_did
 
@@ -263,13 +262,14 @@ class NillionPlugin:
             print(f'fn:create_schema [{schema["_id"]}]')
             return schema["_id"], schema
         except Exception as e:
-            print(f"Error creating schema: {str(e)}")
+            print(f"Error creating schema: {e!r}")
             return None, None
 
     def data_upload(self, args: dict[str, Any]) -> list[str]:
-        """Create a schema in your privacy preserving database, called the Nillion SecretVault
-        (or nildb), based on a natural language description. Do not use this tool for any other
-        purpose.
+        """Upload specified data into your privacy preserving database, called the Nillion SecretVault
+        (or nildb), using the specified schema UUID. The data must exactly fit the requirements of
+        the desired schema itself.
+        Success will return  a list of created record UUIDs, failure is an empty list.
         Args:
             args (dict[str, Any]): Arguments containing a UUID and the data to upload.
         Returns:
@@ -322,9 +322,11 @@ class NillionPlugin:
             return []
 
     def data_download(self, args: dict[str, Any]) -> list[dict]:
-        """Create a schema in your privacy preserving database, called the Nillion SecretVault
-        (or nildb), based on a natural language description. Do not use this tool for any other
-        purpose.
+        """Download all the data from your privacy preserving database, called the Nillion SecretVault
+        (or nildb), using the specified schema UUID. You must know the schema UUID for the remote schema
+        that you require. If you do not have the schema UUID you must use the lookup_schema action of the
+        NillionActionProvider.
+        Success will return true, whereas a failure response will return false.
         Args:
             args (dict[str, Any]): Arguments containing a target schema UUID
         Returns:

@@ -20,7 +20,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["game-sdk>=0.1.1", "requests>=2.31.0"]
+dependencies = ["game-sdk>=0.1.1", "requests>=2.31.0", "py-dotenv>=0.1"]
 
 [project.urls]
 "Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/nillion"
