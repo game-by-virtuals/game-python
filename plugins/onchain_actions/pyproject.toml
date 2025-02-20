@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "onchain_actions_game_sdk"
+version = "0.1.0"
+authors = [
+  { name = "GOAT" },
+]
+description = "Official Onchain Actions Plugin in Python for GAME by GOAT"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "game-sdk>=0.1.1",
+  "web3>=6.20.3",
+  "goat-sdk>=0.1.3",
+  "goat-sdk-wallet-evm>=0.1.1",
+  "goat-sdk-wallet-web3>=0.1.0",
+  "goat-sdk-plugin-erc20>=0.1.0",
+  "goat-sdk-plugin-uniswap>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "python-dotenv>=1.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["onchain_actions_game_sdk"]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/onchain_actions"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "allora_game_sdk"
+version = "0.0.1"
+authors = [
+  { name = "Allora Network"},
+]
+description = "Official Allora Network Python SDK for GAME by Virtuals"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "allora-sdk>=0.2.0",
+  "game-sdk>=0.1.1",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/allora"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"

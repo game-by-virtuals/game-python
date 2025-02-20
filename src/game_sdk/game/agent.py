@@ -2,25 +2,61 @@ from typing import List, Optional, Callable, Dict
 import uuid
 from game_sdk.game.worker import Worker
 from game_sdk.game.custom_types import Function, FunctionResult, FunctionResultStatus, ActionResponse, ActionType
-from game_sdk.game.utils import create_agent, create_workers, post
+from game_sdk.game.api import GAMEClient
+from game_sdk.game.api_v2 import GAMEClientV2
 
 class Session:
+    """
+    Manages a unique session for agent interactions.
+
+    A Session maintains state for a single interaction sequence, including function results
+    and a unique identifier. It can be reset to start a fresh interaction sequence.
+
+    Attributes:
+        id (str): Unique identifier for the session, generated using UUID4.
+        function_result (Optional[FunctionResult]): Result of the last executed function.
+    """
     def __init__(self):
         self.id = str(uuid.uuid4())
         self.function_result: Optional[FunctionResult] = None
 
     def reset(self):
+        """
+        Resets the session by generating a new ID and clearing function results.
+        This is useful when starting a new interaction sequence.
+        """
         self.id = str(uuid.uuid4())
         self.function_result = None
 
 
 class WorkerConfig:
+    """
+    Configuration for a GAME SDK worker.
+
+    This class defines the behavior and capabilities of a worker within the GAME system.
+    Workers are specialized agents that can perform specific tasks using their defined
+    action space and state management functions.
+
+    Args:
+        id (str): Unique identifier for the worker.
+        worker_description (str): Description of the worker's capabilities for task generation.
+        get_state_fn (Callable): Function to retrieve the worker's current state.
+        action_space (List[Function]): List of functions the worker can execute.
+        instruction (Optional[str]): Additional instructions for the worker.
+
+    Attributes:
+        id (str): Worker's unique identifier.
+        worker_description (str): Description used by task generator.
+        instruction (str): Additional worker instructions.
+        get_state_fn (Callable): State retrieval function with instruction context.
+        action_space (Dict[str, Function]): Available functions mapped by name.
+    """
     def __init__(self,
                  id: str,
                  worker_description: str,
                  get_state_fn: Callable,
                  action_space: List[Function],
-                 instruction: Optional[str] = "",
+                 instruction: Optional[str] = None,
                  ):
 
         self.id = id  # id or name of the worker
@@ -28,7 +64,6 @@ class WorkerConfig:
         self.worker_description = worker_description
         self.instruction = instruction
         self.get_state_fn = get_state_fn
-        self.action_space = action_space
 
         # setup get state function with the instructions
         self.get_state_fn = lambda function_result, current_state: {
@@ -43,6 +78,26 @@ class WorkerConfig:
 
 
 class Agent:
+    """
+    Main agent class for the GAME SDK.
+
+    The Agent class represents an autonomous agent that can perform tasks using configured
+    workers. It manages the interaction flow, state management, and task execution within
+    the GAME system.
+
+    Args:
+        api_key (str): Authentication key for API access.
+        name (str): Name of the agent.
+        agent_goal (str): High-level goal or purpose of the agent.
+        agent_description (str): Detailed description of the agent's capabilities.
+        get_agent_state_fn (Callable): Function to retrieve agent's current state.
+
+    The Agent class serves as the primary interface for:
+    - Managing worker configurations
+    - Handling task execution
+    - Maintaining session state
+    - Coordinating API interactions
+    """
     def __init__(self,
                  api_key: str,
                  name: str,
@@ -50,10 +105,17 @@ class Agent:
                  agent_description: str,
                  get_agent_state_fn: Callable,
                  workers: Optional[List[WorkerConfig]] = None,
+                 model_name: str = "Llama-3.1-405B-Instruct",
                  ):
 
-        self._base_url: str = "https://game.virtuals.io"
+        if api_key.startswith("apt-"):
+            self.client = GAMEClientV2(api_key)
+        else:
+            self.client = GAMEClient(api_key)
+
         self._api_key: str = api_key
+
+        self._model_name: str = model_name
 
         # checks
         if not self._api_key:
@@ -79,9 +141,16 @@ class Agent:
         # initialize and set up agent states
         self.agent_state = self.get_agent_state_fn(None, None)
 
+        # initialize observation
+        observation_content = self.agent_state["observations"] if "observations" in self.agent_state else ""
+        self.observation = {
+            "content": observation_content,
+            "is_global": True,
+        }
+
         # create agent
-        self.agent_id = create_agent(
-            self._base_url, self._api_key, self.name, self.agent_description, self.agent_goal
+        self.agent_id = self.client.create_agent(
+            self.name, self.agent_description, self.agent_goal
         )
 
     def compile(self):
@@ -91,8 +160,7 @@ class Agent:
 
         workers_list = list(self.workers.values())
 
-        self._map_id = create_workers(
-            self._base_url, self._api_key, workers_list)
+        self._map_id = self.client.create_workers(workers_list)
         self.current_worker_id = next(iter(self.workers.values())).id
 
         # initialize and set up worker states
@@ -165,15 +233,15 @@ class Agent:
                 function_result.model_dump(
                     exclude={'info'}) if function_result else None
             ),
+            "observations": self.observation,
             "version": "v2",
         }
 
         # make API call
-        response = post(
-            base_url=self._base_url,
-            api_key=self._api_key,
-            endpoint=f"/v2/agents/{self.agent_id}/actions",
+        response = self.client.get_agent_action(
+            agent_id=self.agent_id,
             data=data,
+            model_name=self._model_name
         )
 
         return ActionResponse.model_validate(response)
@@ -222,8 +290,11 @@ class Agent:
                 self._session.function_result, self.worker_states[self.current_worker_id])
             self.worker_states[self.current_worker_id] = updated_worker_state
 
+            update_observation = "worker"
+
         elif action_response.action_type == ActionType.WAIT:
-            print("Task ended completed or ended (not possible wiht current actions)")
+            print("Task ended completed or ended (not possible with current actions)")
+            update_observation = "task"
 
         elif action_response.action_type == ActionType.GO_TO:
             if not action_response.action_args:
@@ -232,7 +303,8 @@ class Agent:
             next_worker = action_response.action_args["location_id"]
             print(f"Next worker selected: {next_worker}")
             self.current_worker_id = next_worker
-
+            
+            update_observation = "worker"
         else:
             raise ValueError(
                 f"Unknown action type: {action_response.action_type}")
@@ -240,6 +312,37 @@ class Agent:
         # update agent state
         self.agent_state = self.get_agent_state_fn(
             self._session.function_result, self.agent_state)
+        
+        # update observation (saved state)
+        if update_observation == "task":
+            if "observations" in self.agent_state:
+                observation_content = self.agent_state["observations"]
+                self.observation = {
+                    "content": observation_content,
+                    "is_global": True,
+                }
+            else:
+                self.observation = None
+        elif update_observation == "worker":
+            current_worker_state = self.worker_states[self.current_worker_id]
+            if "observations" in current_worker_state:
+                observation_content = current_worker_state["observations"]
+                self.observation = {
+                    "content": observation_content,
+                    "is_global": False,
+                }
+            else:
+                self.observation = {
+                    "content": "",
+                    "is_global": True
+                }
+        else:
+            self.observation = {
+                "content": "",
+                "is_global": True
+            }
+
+        return action_response, self._session.function_result
 
     def run(self):
         self._session = Session()

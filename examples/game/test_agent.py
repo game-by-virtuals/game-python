@@ -1,3 +1,16 @@
+"""
+Example implementation of a GAME SDK agent with multiple workers.
+
+This example demonstrates how to:
+1. Create and configure workers with different capabilities
+2. Manage state across workers
+3. Define and register custom functions
+4. Handle function results and state updates
+
+The example implements a simple environment with objects that workers can interact with
+through various actions like taking, throwing, and sitting.
+"""
+
 from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.custom_types import Function, Argument, FunctionResult, FunctionResultStatus
 from typing import Tuple
@@ -5,19 +18,29 @@ import os
 
 game_api_key = os.environ.get("GAME_API_KEY")
 
-# the get_worker_state_fn and the get_agent_state_fn can be the same function or diffferent
-# each worker can also have a different get_worker_state_fn and maintain their own state
-# or they can share the same get_worker_state_fn and maintain the same state
-
 def get_worker_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
     """
-    This function will get called at every step of the workers execution to form the agent's state.
-    It will take as input the function result from the previous step.
+    State management function for workers in the example environment.
+
+    This function demonstrates how to maintain and update worker state based on
+    function execution results. It shows both static state management and
+    dynamic state updates.
+
+    Args:
+        function_result (FunctionResult): Result from the previous function execution.
+        current_state (dict): Current state of the worker.
+
+    Returns:
+        dict: Updated state containing available objects and their properties.
+
+    Note:
+        This example uses a fixed state for simplicity, but you can implement
+        dynamic state updates based on function_result.info.
     """
-    # dict containing info about the function result as implemented in the exectuable
+    # Dict containing info about the function result as implemented in the executable
     info = function_result.info 
 
-    # example of fixed state (function result info is not used to change state) - the first state placed here is the initial state
+    # Example of fixed state - the first state placed here is the initial state
     init_state = {
         "objects": [
             {"name": "apple", "description": "A red apple", "type": ["item", "food"]},
@@ -39,8 +62,17 @@ def get_worker_state_fn(function_result: FunctionResult, current_state: dict) ->
 
 def get_agent_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
     """
-    This function will get called at every step of the agent's execution to form the agent's state.
-    It will take as input the function result from the previous step.
+    State management function for the main agent.
+
+    Maintains the high-level state of the agent, which can be different from
+    or aggregate the states of individual workers.
+
+    Args:
+        function_result (FunctionResult): Result from the previous function execution.
+        current_state (dict): Current state of the agent.
+
+    Returns:
+        dict: Updated agent state.
     """
 
     # example of fixed state (function result info is not used to change state) - the first state placed here is the initial state
@@ -67,10 +99,16 @@ def get_agent_state_fn(function_result: FunctionResult, current_state: dict) -> 
 def take_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
     Function to take an object from the environment.
-    
+
     Args:
-        object: Name of the object to take
-        **kwargs: Additional arguments that might be passed
+        object (str): Name of the object to take.
+        **kwargs: Additional arguments that might be passed.
+
+    Returns:
+        Tuple[FunctionResultStatus, str, dict]: Status, feedback message, and state info.
+
+    Example:
+        status, msg, info = take_object("apple")
     """
     
     if object:
@@ -81,10 +119,16 @@ def take_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]
 def throw_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
     Function to throw an object.
-    
+
     Args:
-        object: Name of the object to throw
-        **kwargs: Additional arguments that might be passed
+        object (str): Name of the object to throw.
+        **kwargs: Additional arguments that might be passed.
+
+    Returns:
+        Tuple[FunctionResultStatus, str, dict]: Status, feedback message, and state info.
+
+    Example:
+        status, msg, info = throw_object("ball")
     """
     if object:
         return FunctionResultStatus.DONE, f"Successfully threw the {object}", {}
@@ -94,10 +138,19 @@ def throw_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict
 def sit_on_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
     Function to sit on an object.
-    
+
     Args:
-        object: Name of the object to sit on
-        **kwargs: Additional arguments that might be passed
+        object (str): Name of the object to sit on.
+        **kwargs: Additional arguments that might be passed.
+
+    Returns:
+        Tuple[FunctionResultStatus, str, dict]: Status, feedback message, and state info.
+
+    Raises:
+        ValueError: If the object is not sittable.
+
+    Example:
+        status, msg, info = sit_on_object("chair")
     """
     sittable_objects = {"chair", "bench", "stool", "couch", "sofa", "bed"}
     
@@ -109,34 +162,60 @@ def sit_on_object(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dic
     
     return FunctionResultStatus.FAILED, f"Cannot sit on {object} - not a sittable object", {}
 
+
 def throw_fruit(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
-    Function to throw fruits.
+    Specialized function to throw fruit objects.
+
+    This function demonstrates type-specific actions in the environment.
+
+    Args:
+        object (str): Name of the fruit to throw.
+        **kwargs: Additional arguments that might be passed.
+
+    Returns:
+        Tuple[FunctionResultStatus, str, dict]: Status, feedback message, and state info.
+
+    Example:
+        status, msg, info = throw_fruit("apple")
     """
     fruits = {"apple", "banana", "orange", "pear", "mango", "grape"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No fruit specified", {}
+        return FunctionResultStatus.FAILED, "No fruit specified", {}
     
     if object.lower() in fruits:
         return FunctionResultStatus.DONE, f"Successfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a fruit", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a fruit", {}
+
 
 def throw_furniture(object: str, **kwargs) -> Tuple[FunctionResultStatus, str, dict]:
     """
-    Function to throw furniture.
+    Specialized function to throw furniture objects.
+
+    This function demonstrates type-specific actions in the environment.
+
+    Args:
+        object (str): Name of the furniture to throw.
+        **kwargs: Additional arguments that might be passed.
+
+    Returns:
+        Tuple[FunctionResultStatus, str, dict]: Status, feedback message, and state info.
+
+    Example:
+        status, msg, info = throw_furniture("chair")
     """
     furniture = {"chair", "table", "stool", "lamp", "vase", "cushion"}
     
     if not object:
-        return FunctionResultStatus.ERROR, "No furniture specified", {}
+        return FunctionResultStatus.FAILED, "No furniture specified", {}
     
     if object.lower() in furniture:
         return FunctionResultStatus.DONE, f"Powerfully threw the {object} across the room!", {}
-    return FunctionResultStatus.ERROR, f"Cannot throw {object} - not a furniture item", {}
+    return FunctionResultStatus.FAILED, f"Cannot throw {object} - not a furniture item", {}
 
 
-# create functions for each executable
+# Create functions for each executable with detailed argument specifications
 take_object_fn = Function(
     fn_name="take",
     fn_description="Take object",
@@ -195,7 +274,8 @@ chaos_agent = Agent(
     agent_goal="Conquer the world by causing chaos.",
     agent_description="You are a mischievous master of chaos is very strong but with a very short attention span, and not so much brains",
     get_agent_state_fn=get_agent_state_fn,
-    workers=[fruit_thrower, furniture_thrower]
+    workers=[fruit_thrower, furniture_thrower],
+    model_name="Llama-3.1-405B-Instruct"
 )
 
 # # interact and instruct the worker to do something
