@@ -121,6 +121,12 @@ class Agent:
         # initialize session
         self._session = Session()
 
+        # Input validation for character limits
+        if len(agent_goal.replace(" ", "")) > 1500:
+            raise ValueError("Agent goal must not exceed 1500 characters")
+        if len(agent_description.replace(" ", "")) > 3000:
+            raise ValueError("Agent description must not exceed 3000 characters")
+
         self.name = name
         self.agent_goal = agent_goal
         self.agent_description = agent_description

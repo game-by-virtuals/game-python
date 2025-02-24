@@ -32,6 +32,12 @@ class FunctionConfig:
     platform: str = None
 
     def __post_init__(self):
+        # Validate feedback character limits
+        if len(self.success_feedback.replace(" ", "")) > 1000:
+            raise ValueError("success_feedback must not exceed 1000 characters")
+        if len(self.error_feedback.replace(" ", "")) > 1000:
+            raise ValueError("error_feedback must not exceed 1000 characters")
+
         self.headers = self.headers or {}
         self.payload = self.payload or {}
 
