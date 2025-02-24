@@ -1,0 +1,13 @@
+version: 1
+appendOnly: true
+labels:
+  - label: "bugfix"
+    title: "(?i)fix|bug"
+  - label: "documentation"
+    title: "(?i)docs|documentation"
+  - label: "enhancement"
+    title: "(?i)feat|feature|enhance|improve"
+  - label: "plugin"
+    title: "(?i)plugin"
+  - label: "test"
+    title: "(?i)test"
