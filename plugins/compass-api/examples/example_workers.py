@@ -2,7 +2,7 @@
 
 from game_sdk.game.worker import Worker
 
-from compass.virtuals_sdk.api_wrapper import AaveV3, Aerodrome, Others, UniswapV3
+from compass.virtuals_sdk.api_wrapper import AaveV3, Others, UniswapV3
 from compass.virtuals_sdk.config import api_key
 from compass.virtuals_sdk.shared_defaults import get_state_fn
 from compass.virtuals_sdk.wallet import Wallet
@@ -18,12 +18,6 @@ aave_compass_api_worker = Worker(
     description=AaveV3.worker_description,
     get_state_fn=get_state_fn,
     action_space=AaveV3.action_space,
-)
-aerodrome_compass_api_worker = Worker(
-    api_key=api_key,
-    description=Aerodrome.worker_description,
-    get_state_fn=get_state_fn,
-    action_space=Aerodrome.action_space,
 )
 uniswap_compass_api_worker = Worker(
     api_key=api_key,
@@ -42,7 +36,8 @@ query_and_worker_pairs = [
     ("Please tell me the details of the ens name vitalik.eth", others_compass_api_worker),
     ("Please get me the price of WBTC in USDC on the arbitrum network", aave_compass_api_worker),
     ("Please tell me the price of USDC/WETH on the arbitrum chain", uniswap_compass_api_worker),
-    ("Please tell me my own wallet address", wallet_worker)
+    ("Please tell me my own wallet address", wallet_worker),
+    ("Please give me the unsigned transaction for wrapping 0.1ETH, sent from address 0xA9D1e08C7793af67e9d92fe308d5697FB81d3E43 on the ethereum chain", others_compass_api_worker)
 ]
 for query, worker in query_and_worker_pairs:
     print("\n\n")
