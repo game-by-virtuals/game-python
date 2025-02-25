@@ -21,7 +21,8 @@ Example:
     }
     
     twitter_plugin = TwitterPlugin(options)
-    twitter_plugin.get_function('post_tweet')("Hello, World!")
+    post_tweet_fn = twitter_plugin.get_function('post_tweet')
+    post_tweet_fn("Hello, World!")
     ```
 """
 
@@ -56,22 +57,22 @@ class TwitterPlugin:
     """
 
     def __init__(self, options: Dict[str, Any]) -> None:
-        self.id: str = options.get("id", "twitter_plugin")
-        self.name: str = options.get("name", "Twitter Plugin")
-        self.description: str = options.get(
+        # Set credentials
+        self.id = options.get("id", "twitter_plugin")
+        self.name = options.get("name", "Twitter Plugin")
+        self.description = options.get(
             "description",
             "A plugin that executes tasks within Twitter, capable of posting, replying, quoting, and liking tweets, and getting metrics.",
         )
-        # Ensure credentials are provided
-        credentials: Optional[Dict[str, str]] = options.get("credentials")
+        credentials = options.get("credentials")
         if not credentials:
             raise ValueError("Twitter API credentials are required.")
-        
+        # Init Tweepy client
         self.twitter_client: tweepy.Client = tweepy.Client(
             bearer_token = credentials.get("bearerToken"),
-            consumer_key=credentials.get("apiKey"),
-            consumer_secret=credentials.get("apiSecretKey"),
-            access_token=credentials.get("accessToken"),
+            consumer_key = credentials.get("apiKey"),
+            consumer_secret = credentials.get("apiSecretKey"),
+            access_token = credentials.get("accessToken"),
             access_token_secret=credentials.get("accessTokenSecret"),
             return_type = dict
         )
@@ -85,7 +86,6 @@ class TwitterPlugin:
             "get_user_from_handle": self._get_user_from_handle,
             "get_user_mentions": self._get_user_mentions
         }
-        
         # Configure logging
         logging.basicConfig(level=logging.INFO)
         self.logger: logging.Logger = logging.getLogger(__name__)
@@ -137,10 +137,10 @@ class TwitterPlugin:
         """
         try:
             user = self.twitter_client.get_me(user_fields=["public_metrics"])
-            if not user or not user.data:
+            if not user or not user.get("data", None):
                 self.logger.warning("Failed to fetch user metrics.")
                 return {}
-            public_metrics = user.data.public_metrics
+            public_metrics = user.get("data", {}).get("public_metrics", None)
             return {
                 "followers": public_metrics.get("followers_count", 0),
                 "following": public_metrics.get("following_count", 0),
