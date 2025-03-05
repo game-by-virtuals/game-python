@@ -1,0 +1,130 @@
+name: Validate New Plugin Metadata
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "plugins/**" ]
+    types: [ opened, edited, reopened, synchronize ]
+
+jobs:
+  identify-new-plugins:
+    runs-on: ubuntu-latest
+    outputs:
+      plugin_dirs: ${{ steps.find_new_plugins.outputs.plugin_dirs }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Identify New Plugin Directories
+        id: find_new_plugins
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          BASE_COMMIT=$(git merge-base origin/${{ github.event.pull_request.base.ref }} HEAD)
+
+          NEW_PLUGINS=()
+          for plugin_dir in $(git diff --diff-filter=A --name-only $BASE_COMMIT...HEAD | grep '^plugins/' | cut -d'/' -f1-2 | sort -u); do
+            if ! git rev-parse --verify origin/${{ github.event.pull_request.base.ref }}:"$plugin_dir" &>/dev/null; then
+              NEW_PLUGINS+=("$plugin_dir")
+            fi
+          done
+
+          if [[ ${#NEW_PLUGINS[@]} -eq 0 ]]; then
+            echo "plugin_dirs=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "plugin_dirs=$(jq -nc --argjson arr "$(printf '%s\n' "${NEW_PLUGINS[@]}" | jq -R . | jq -s .)" '$arr')" >> $GITHUB_OUTPUT
+
+  validate-individual-plugins:
+    needs: identify-new-plugins
+    if: ${{ needs.identify-new-plugins.outputs.plugin_dirs != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        plugin_dir: ${{ fromJson(needs.identify-new-plugins.outputs.plugin_dirs) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate Plugin Metadata
+        run: |
+          metadata_file="${{ matrix.plugin_dir }}/plugin_metadata.yml"
+          if [[ ! -f "$metadata_file" ]]; then
+            echo "::error file=$metadata_file::Missing plugin_metadata.yml"
+            exit 1
+          fi
+
+          echo "::group::Validating $metadata_file"
+
+          metadata=$(yq '.' "$metadata_file")
+          errors=0
+
+          check_required_field() {
+            local field="$1"
+            local value=$(echo "$metadata" | yq ".$field")
+            if [[ -z "$value" ]]; then
+              echo "::error file=$metadata_file::'$field' is missing"
+              ((errors++))
+            fi
+          }
+
+          check_valid_url() {
+            local field="$1"
+            local value=$(echo "$metadata" | yq ".$field" || true)
+
+            if [[ -z "$value" ]]; then
+              return 0
+            fi
+
+            if [[ "$value" == "["*"]" ]]; then  # Detects if the field is an array
+              for url in $(echo "$value" | yq '.[]'); do
+                if [[ ! "$url" =~ ^https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?$ ]]; then
+                  echo "::error file=$metadata_file::'$field' contains an invalid URL: $url"
+                  ((errors++))
+                fi
+              done
+            else
+              if [[ ! "$value" =~ ^https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?$ ]]; then
+                echo "::error file=$metadata_file::'$field' is not a valid URL"
+                ((errors++))
+              fi
+            fi
+          }
+
+          check_required_field "plugin_name"
+          check_required_field "author"
+          check_required_field "short_description"
+          check_required_field "detailed_description"
+          check_required_field "support_contact"
+
+          check_valid_url "logo_url"
+          check_valid_url "plugin_logo_url"
+          check_valid_url "demo_video_url"
+          check_valid_url "documentation_url"
+          check_valid_url "changelog_url"
+          check_valid_url "community_url"
+          check_valid_url "screenshots"
+
+          release_date=$(echo "$metadata" | yq '.release_date')
+          if [[ ! "$release_date" =~ ^202[0-9]{1}-[0-9]{2}$ ]]; then
+            echo "::error file=$metadata_file::'release_date' should be in YYYY-MM format"
+            ((errors++))
+          fi
+
+          x_account_handle=$(echo "$metadata" | yq '.x_account_handle')
+          if [[ -n "$x_account_handle" && ! "$x_account_handle" =~ ^@[a-zA-Z0-9_]{1,15}$ ]]; then
+            echo "::error file=$metadata_file::'x_account_handle' is not a valid X (Twitter) handle"
+            ((errors++))
+          fi
+
+          support_contact=$(echo "$metadata" | yq '.support_contact')
+          if [[ ! "$support_contact" =~ ^(https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$ ]]; then
+            echo "::error file=$metadata_file::'support_contact' must be a valid URL or email address"
+            ((errors++))
+          fi
+
+          echo "::endgroup::"
+          exit $errors
