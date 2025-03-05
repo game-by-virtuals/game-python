@@ -82,7 +82,7 @@ jobs:
             local field="$1"
             local required="${2:-optional}"  # Default to "optional" if no second parameter is provided
             local value=$(echo "$metadata" | yq ".$field" || true)
-          
+
             # If field is missing or empty
             if [[ -z "$value" ]]; then
               if [[ "$required" == "required" ]]; then
@@ -91,10 +91,17 @@ jobs:
               fi
               return 0  # Skip validation if it's optional and missing
             fi
-          
+
             # Handle arrays of URLs (e.g., screenshots)
-            if [[ "$value" == "["*"]" ]]; then
-              for url in $(echo "$value" | yq '.[]'); do
+            # Check if the field is an array using yq length check
+            is_array=$(echo "$metadata" | yq -r ".${field} | length")
+            
+            if [[ "$is_array" =~ ^[0-9]+$ && "$is_array" -gt 0 ]]; then
+              # Iterate properly over array elements
+              for url in $(echo "$metadata" | yq -r ".$field[]" || true); do
+                if [[ -z "$url" ]]; then  # Skip empty values inside arrays
+                  continue
+                fi
                 if [[ ! "$url" =~ ^https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?$ ]]; then
                   echo "::error file=$metadata_file::'$field' contains an invalid URL: $url"
                   ((errors++))
