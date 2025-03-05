@@ -6,7 +6,7 @@ release_date: ""
 
 # Description
 short_description: "Plugin's short description"
-detailed_description: ""
+detailed_description: "Plugin's detailed description"
 
 # Media & Assets
 plugin_logo_url: ""
