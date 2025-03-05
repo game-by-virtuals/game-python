@@ -67,49 +67,69 @@ jobs:
           metadata=$(yq '.' "$metadata_file")
           errors=0
 
+          # Regex pattern for a valid URL
+          url_regex='^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$'
+          email_regex='^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          yyyy_mm_regex='^202[0-9]{1}-[0-9]{2}$'
+          x_account_handle_regex='^@[a-zA-Z0-9_]{1,15}$'
+
+          # Function to print missing field error
+          missing_field_error() {
+            local field="$1"
+            echo "::error file=$metadata_file::$field is required but missing"
+            ((errors++))
+          }
+
           # Function to check if a required field is missing
           check_required_field() {
             local field="$1"
-            local value=$(echo "$metadata" | yq ".$field")
-            if [[ -z "$value" ]]; then
-              echo "::error file=$metadata_file::'$field' is missing"
-              ((errors++))
+            local value=$(echo "$metadata" | yq -r ".${field}")
+            if [[ -z "$value" || "$value" == "null" ]]; then
+              missing_field_error "$field"
             fi
           }
 
           # Function to validate a URL field (supports single values and arrays)
           check_valid_url() {
             local field="$1"
-            local required="${2:-optional}"  # Default to "optional" if no second parameter is provided
-            local value=$(echo "$metadata" | yq ".$field" || true)
+            local required="${2:-optional}"  # Default to "optional" if not specified
+            local value
+            local field_type
+            local non_empty_value=0
+
+            value=$(echo "$metadata" | yq -r ".${field}" 2>/dev/null || echo "")
+            field_type=$(echo "$metadata" | yq -r ".${field} | type" 2>/dev/null || echo "")
 
             # If field is missing or empty
-            if [[ -z "$value" ]]; then
+            if [[ "$value" == "null" || -z "$value" ]]; then
               if [[ "$required" == "required" ]]; then
-                echo "::error file=$metadata_file::'$field' is required but missing"
-                ((errors++))
+                missing_field_error "$field"
               fi
-              return 0  # Skip validation if it's optional and missing
+              return 0  # Skip validation if optional
             fi
 
-            # Handle arrays of URLs (e.g., screenshots)
-            # Check if the field is an array using yq length check
-            is_array=$(echo "$metadata" | yq -r ".${field} | length")
-            
-            if [[ "$is_array" =~ ^[0-9]+$ && "$is_array" -gt 0 ]]; then
-              # Iterate properly over array elements
-              for url in $(echo "$metadata" | yq -r ".$field[]" || true); do
-                if [[ -z "$url" ]]; then  # Skip empty values inside arrays
-                  continue
-                fi
-                if [[ ! "$url" =~ ^https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?$ ]]; then
+            # Handle arrays of URLs
+            if [[ "$field_type" == "!!seq" ]]; then
+              mapfile -t urls < <(echo "$metadata" | yq -r ".${field} | .[]")
+
+              for url in "${urls[@]}"; do
+                [[ -z "$url" ]] && continue
+                if [[ ! "$url" =~ $url_regex ]]; then
                   echo "::error file=$metadata_file::'$field' contains an invalid URL: $url"
                   ((errors++))
+                else
+                  ((non_empty_value++))
                 fi
               done
+
+              if [[ $non_empty_value -eq 0 && "$required" == "required" ]]; then
+                echo "::error file=$metadata_file::'$field' is required but missing valid values"
+                ((errors++))
+              fi
             else
-              if [[ ! "$value" =~ ^https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?$ ]]; then
-                echo "::error file=$metadata_file::'$field' is not a valid URL"
+              # Single value validation
+              if [[ ! "$value" =~ $url_regex ]]; then
+                echo "::error file=$metadata_file::'$field' is not a valid URL: $value"
                 ((errors++))
               fi
             fi
@@ -122,21 +142,20 @@ jobs:
           check_required_field "detailed_description"
 
           # Validate URLs (optional fields but must be valid if provided, add "required" as second parameter to make them required, ie: check_valid_url "community_url" "required")
-          check_valid_url "community_url"
           check_valid_url "logo_url"
           check_valid_url "plugin_logo_url"
           check_valid_url "demo_video_url"
           check_valid_url "documentation_url"
           check_valid_url "changelog_url"
+          check_valid_url "community_url"
           check_valid_url "screenshots"
 
           # Validate date format (YYYY-MM)
-          release_date=$(echo "$metadata" | yq '.release_date')
+          release_date=$(echo "$metadata" | yq -r '.release_date')
           if [[ -z "$release_date" ]]; then
-            echo "::error file=$metadata_file::'$release_date' is required but missing"
-            ((errors++))
+            missing_field_error "release_date"
           else
-            if [[ ! "$release_date" =~ ^202[0-9]{1}-[0-9]{2}$ ]]; then
+            if [[ ! "$release_date" =~ $yyyy_mm_regex ]]; then
               echo "::error file=$metadata_file::'release_date' should be in YYYY-MM format"
               ((errors++))
             fi
@@ -145,10 +164,9 @@ jobs:
           # Validate X account handle format (@username)
           x_account_handle=$(echo "$metadata" | yq '.x_account_handle')
           if [[ -z "$x_account_handle" ]]; then
-            echo "::error file=$metadata_file::'$x_account_handle' is required but missing"
-            ((errors++))
+            missing_field_error "x_account_handle"
           else
-            if [[ -n "$x_account_handle" && ! "$x_account_handle" =~ ^@[a-zA-Z0-9_]{1,15}$ ]]; then
+            if [[ -n "$x_account_handle" && ! "$x_account_handle" =~ $x_account_handle_regex ]]; then
               echo "::error file=$metadata_file::'x_account_handle' is not a valid X (Twitter) handle"
               ((errors++))
             fi
@@ -157,10 +175,9 @@ jobs:
           # Validate support contact (must be a valid URL or email)
           support_contact=$(echo "$metadata" | yq '.support_contact')
           if [[ -z "$support_contact" ]]; then
-            echo "::error file=$metadata_file::'$support_contact' is required but missing"
-            ((errors++))
+            missing_field_error "support_contact"
           else
-            if [[ ! "$support_contact" =~ ^(https?:\/\/[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})+(:[0-9]{1,5})?(\/.*)?|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$ ]]; then
+            if [[ ! "$support_contact" =~ ($url_regex|$email_regex) ]]; then
               echo "::error file=$metadata_file::'support_contact' must be a valid URL or email address"
               ((errors++))
             fi
