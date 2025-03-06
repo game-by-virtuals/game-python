@@ -56,6 +56,7 @@ jobs:
 
       - name: Validate Plugin Metadata
         run: |
+          set +e
           metadata_file="${{ matrix.plugin_dir }}/plugin_metadata.yml"
           if [[ ! -f "$metadata_file" ]]; then
             echo "::error file=$metadata_file::Missing plugin_metadata.yml"
@@ -152,7 +153,7 @@ jobs:
 
           # Validate date format (YYYY-MM)
           release_date=$(echo "$metadata" | yq -r '.release_date')
-          if [[ -z "$release_date" ]]; then
+          if [[ -z "$release_date" || "$release_date" == "null" ]]; then
             missing_field_error "release_date"
           else
             if [[ ! "$release_date" =~ $yyyy_mm_regex ]]; then
@@ -163,7 +164,7 @@ jobs:
 
           # Validate X account handle format (@username)
           x_account_handle=$(echo "$metadata" | yq '.x_account_handle')
-          if [[ -z "$x_account_handle" ]]; then
+          if [[ -z "$x_account_handle" || "$x_account_handle" == "null" ]]; then
             missing_field_error "x_account_handle"
           else
             if [[ -n "$x_account_handle" && ! "$x_account_handle" =~ $x_account_handle_regex ]]; then
@@ -174,7 +175,7 @@ jobs:
 
           # Validate support contact (must be a valid URL or email)
           support_contact=$(echo "$metadata" | yq '.support_contact')
-          if [[ -z "$support_contact" ]]; then
+          if [[ -z "$support_contact" || "$support_contact" == "null" ]]; then
             missing_field_error "support_contact"
           else
             if [[ ! "$support_contact" =~ ($url_regex|$email_regex) ]]; then
