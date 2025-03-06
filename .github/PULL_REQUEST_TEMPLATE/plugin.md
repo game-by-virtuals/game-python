@@ -11,6 +11,7 @@ One-liner – What does this plugin contribution add or change?
 ## Plugin Documentation Checklist
 
 - README Validation
+    - [ ] `README.md` file exists in the plugin root folder
     - [ ] Clear installation instructions
     - [ ] Usage examples with code snippets
     - [ ] List of features and capabilities
@@ -18,6 +19,7 @@ One-liner – What does this plugin contribution add or change?
     - [ ] Contribution guidelines (if applicable)
 
 - Metadata Validation
+    - [ ] `plugin_metadata.yml` file exists in the plugin root folder
     - [ ] Complete metadata provided in reference to [plugin metadata template](../.././plugins/plugin_metadata_template.yml)
 
 ## Dev Testing
