@@ -1,0 +1,23 @@
+# General Information
+plugin_name: "Plugin's Name"
+author: "Plugin's Author"
+logo_url: "https://i.imgur.com/dlq3ypk.png"
+release_date: "2025-03"
+
+# Description
+short_description: "Plugin's short description"
+detailed_description: "Plugin's detailed description"
+
+# Media & Assets
+plugin_logo_url: "https://i.imgur.com/dlq3ypk.png"
+screenshots:
+  - "https://i.imgur.com/dlq3ypk.png"
+  - "https://i.imgur.com/dlq3ypk.png"
+demo_video_url: "https://i.imgur.com/dlq3ypk.png"
+documentation_url: "https://i.imgur.com/dlq3ypk.png"
+changelog_url: "https://i.imgur.com/dlq3ypk.png"
+
+# Contact & Support
+x_account_handle: "@GAME_Virtuals"
+support_contact: "https://discord.gg/virtualsio"
+community_url: "https://discord.gg/virtualsio"
