@@ -176,7 +176,7 @@ We are releasing this simpler setup as a more generalised/platform agnostic fram
 
 ![llp.png](./../../../docs/imgs/llp.png)
 
-After configuring the agent’s character card or description and setting up the agents functions, we can then use the `react` method to get an agent to respond and execute a sequence of actions based on the task description provided and the context. Between each action in the sequence, the agent only receives the `success_feedback` and `error_feedback` of each function executed.
+After configuring the agent's character card or description and setting up the agents functions, we can then use the `react` method to get an agent to respond and execute a sequence of actions based on the task description provided and the context. Between each action in the sequence, the agent only receives the `success_feedback` and `error_feedback` of each function executed.
 
 ```python
 # React/respond to a certain event
@@ -189,7 +189,7 @@ response = agent.react(
 ```
 
 > [!IMPORTANT]
-> Remember that the `platform` tag determines what functions are available to the agent. The agent will have access to functions that have the same `platform` tag. All the default available functions listed on `agent.list_available_default_twitter_functions()` and set via `agent.use_default_twitter_functions()` have the `platform` tag of “twitter”.
+> Remember that the `platform` tag determines what functions are available to the agent. The agent will have access to functions that have the same `platform` tag. All the default available functions listed on `agent.list_available_default_twitter_functions()` and set via `agent.use_default_twitter_functions()` have the `platform` tag of "twitter".
 
 ## Arguments Definition
 
@@ -238,3 +238,31 @@ agent.add_custom_function(pin_message_fn)
 # reset memory
 agent.reset_memory()
 ```
+
+### Export Agent Configuration to Sandbox
+
+You can export your agent's configuration to a format compatible with the Agent Sandbox for further testing or modifications:
+
+```python
+# Export agent configuration
+agent_config = agent.export_to_sandbox()
+```
+
+This will return and print a dictionary containing all agent configurations including:
+
+- Goal, description, and world info
+- Task description
+- Enabled functions and custom functions
+- Templates (shared, post, and reply templates)
+- Heartbeat settings
+- Game engine model
+
+The exported configuration can be used in the [Agent Sandbox](https://game-lite.virtuals.io/) for:
+
+- Testing different configurations
+- Fine-tuning templates
+- Sharing configurations with other developers
+- Backup of working configurations
+
+> [!NOTE]
+> The exported configuration will have `isSandbox` set to `true` for all templates to ensure compatibility with the sandbox environment.

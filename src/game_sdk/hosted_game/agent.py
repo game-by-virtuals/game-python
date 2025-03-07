@@ -388,32 +388,20 @@ class Agent:
             self.game_engine_model
         )
 
-    def export(self) -> str:
-        """Export the agent configuration as JSON string"""
-        export_dict = {
-            "goal": self.goal,
-            "description": self.description,
-            "worldInfo": self.world_info,
-            "functions": self.enabled_functions,
-            "customFunctions": [
-                {
-                    "id": func.id,
-                    "fn_name": func.fn_name,
-                    "fn_description": func.fn_description,
-                    "args": [asdict(arg) for arg in func.args],
-                    "hint": func.hint,
-                    "config": asdict(func.config)
-                }
-                for func in self.custom_functions
-            ]
-        }
-        agent_json = json.dumps(export_dict, indent=4)
-
-        # save to file
-        with open('agent.json', 'w') as f:
-            f.write(agent_json)
-
-        return agent_json
+    def export_to_sandbox(self) -> dict:
+        return self.game_sdk.export_to_sandbox(
+            self.goal,
+            self.description,
+            self.world_info,
+            self.enabled_functions,
+            self.custom_functions,
+            self.main_heartbeat,
+            self.reaction_heartbeat,
+            self.task_description,
+            self.templates,
+            self.game_engine_model,
+            # self.workers
+        )
     
     def add_template(self, template: ContentLLMTemplate) -> bool:
         """Add a template to the agent"""
