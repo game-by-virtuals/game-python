@@ -1,4 +1,5 @@
 import requests
+import json
 
 
 class GameSDK:
@@ -135,3 +136,62 @@ class GameSDK:
             raise Exception("Failed to reset memory.")
 
         return "Memory reset successfully."
+
+    def export_to_sandbox(self, goal: str, description: str, world_info: str, enabled_functions: list, 
+              custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, task_description: str,
+              templates: list, game_engine_model: str = "llama_3_1_405b") -> dict:
+        """Export all initialization fields of the Agent as a dictionary"""
+
+        templates_dicts = [template.to_dict() for template in templates]
+
+        shared_template = {
+            "startTemplate": "",
+            "template": "",
+            "endTemplate": ""
+        }
+
+        post_template = None
+        reply_template = None
+
+        # Process templates
+        if templates_dicts:
+            for template_dict in templates_dicts:
+                # Handle shared templates
+                if template_dict["templateType"] == "TWITTER_START_SYSTEM_PROMPT":
+                    shared_template["startTemplate"] = template_dict["systemPrompt"]
+                elif template_dict["templateType"] == "SHARED":
+                    shared_template["template"] = template_dict["systemPrompt"]
+                elif template_dict["templateType"] == "TWITTER_END_SYSTEM_PROMPT":
+                    shared_template["endTemplate"] = template_dict["systemPrompt"]
+                # Handle POST and REPLY templates
+                elif template_dict["type"] == "POST":
+                    post_template = template_dict
+                elif template_dict["type"] == "REPLY":
+                    reply_template = template_dict
+
+        export_dict = {
+            "goal": goal,
+            "description": description,
+            "worldInfo": world_info,
+            "mainHeartbeat": main_heartbeat,
+            "reactionHeartbeat": reaction_heartbeat,
+            "taskDescription": task_description,
+            "gameEngineModel": game_engine_model,
+            "functions": enabled_functions,
+            "customFunctions": [x.toJson() for x in custom_functions],
+            "sharedTemplate": shared_template
+        }
+
+        # Add POST and REPLY templates if they exist
+        if post_template:
+            post_template["isSandbox"] = True  # Force isSandbox to True
+            export_dict["postTemplate"] = post_template
+        if reply_template:
+            reply_template["isSandbox"] = True  # Force isSandbox to True
+            export_dict["replyTemplate"] = reply_template
+
+        print("Exported Agent Configuration:")
+        print(json.dumps(export_dict, indent=4))
+
+        return export_dict
+
