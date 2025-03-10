@@ -21,7 +21,8 @@ Example:
     }
     
     twitter_plugin = TwitterPlugin(options)
-    twitter_plugin.get_function('post_tweet')("Hello, World!")
+    post_tweet_fn = twitter_plugin.get_function('post_tweet')
+    post_tweet_fn("Hello, World!")
     ```
 """
 
@@ -56,22 +57,22 @@ class TwitterPlugin:
     """
 
     def __init__(self, options: Dict[str, Any]) -> None:
-        self.id: str = options.get("id", "twitter_plugin")
-        self.name: str = options.get("name", "Twitter Plugin")
-        self.description: str = options.get(
+        # Set credentials
+        self.id = options.get("id", "twitter_plugin")
+        self.name = options.get("name", "Twitter Plugin")
+        self.description = options.get(
             "description",
             "A plugin that executes tasks within Twitter, capable of posting, replying, quoting, and liking tweets, and getting metrics.",
         )
-        # Ensure credentials are provided
-        credentials: Optional[Dict[str, str]] = options.get("credentials")
+        credentials = options.get("credentials")
         if not credentials:
             raise ValueError("Twitter API credentials are required.")
-        
+        # Init Tweepy client
         self.twitter_client: tweepy.Client = tweepy.Client(
             bearer_token = credentials.get("bearerToken"),
-            consumer_key=credentials.get("apiKey"),
-            consumer_secret=credentials.get("apiSecretKey"),
-            access_token=credentials.get("accessToken"),
+            consumer_key = credentials.get("apiKey"),
+            consumer_secret = credentials.get("apiSecretKey"),
+            access_token = credentials.get("accessToken"),
             access_token_secret=credentials.get("accessTokenSecret"),
             return_type = dict
         )
@@ -85,7 +86,6 @@ class TwitterPlugin:
             "get_user_from_handle": self._get_user_from_handle,
             "get_user_mentions": self._get_user_mentions
         }
-        
         # Configure logging
         logging.basicConfig(level=logging.INFO)
         self.logger: logging.Logger = logging.getLogger(__name__)
@@ -137,10 +137,10 @@ class TwitterPlugin:
         """
         try:
             user = self.twitter_client.get_me(user_fields=["public_metrics"])
-            if not user or not user.data:
+            if not user or not user.get("data", None):
                 self.logger.warning("Failed to fetch user metrics.")
                 return {}
-            public_metrics = user.data.public_metrics
+            public_metrics = user.get("data", {}).get("public_metrics", None)
             return {
                 "followers": public_metrics.get("followers_count", 0),
                 "following": public_metrics.get("following_count", 0),
@@ -150,7 +150,7 @@ class TwitterPlugin:
             self.logger.error(f"Failed to fetch metrics: {e}")
             return {}
 
-    def _reply_tweet(self, tweet_id: int, reply: str) -> None:
+    def _reply_tweet(self, tweet_id: int, reply: str, media_ids: Optional[str] = None) -> None:
         """
         Reply to a specific tweet.
 
@@ -162,12 +162,14 @@ class TwitterPlugin:
             tweepy.TweepyException: If there's an error posting the reply.
         """
         try:
+            if media_ids and len(media_ids) > 4:
+                raise ValueError("media_ids cannot contain more than 4 items.")
             self.twitter_client.create_tweet(in_reply_to_tweet_id=tweet_id, text=reply)
             self.logger.info(f"Successfully replied to tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to reply to tweet {tweet_id}: {e}")
 
-    def _post_tweet(self, tweet: str) -> Dict[str, Any]:
+    def _post_tweet(self, tweet: str, media_ids: Optional[str] = None) -> Dict[str, Any]:
         """
         Post a new tweet.
 
@@ -181,6 +183,8 @@ class TwitterPlugin:
             tweepy.TweepyException: If there's an error posting the tweet.
         """
         try:
+            if media_ids and len(media_ids) > 4:
+                raise ValueError("media_ids cannot contain more than 4 items.")
             self.twitter_client.create_tweet(text=tweet)
             self.logger.info("Tweet posted successfully.")
         except tweepy.TweepyException as e:
@@ -202,7 +206,7 @@ class TwitterPlugin:
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to like tweet {tweet_id}: {e}")
 
-    def _quote_tweet(self, tweet_id: int, quote: str) -> None:
+    def _quote_tweet(self, tweet_id: int, quote: str, media_ids: Optional[str] = None) -> None:
         """
         Quote a specific tweet with additional text.
 
@@ -214,7 +218,7 @@ class TwitterPlugin:
             tweepy.TweepyException: If there's an error posting the quote tweet.
         """
         try:
-            self.twitter_client.create_tweet(quote_tweet_id=tweet_id, text=quote)
+            self.twitter_client.create_tweet(quote_tweet_id=tweet_id, text=quote, media_ids=media_ids)
             self.logger.info(f"Successfully quoted tweet {tweet_id}.")
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to quote tweet {tweet_id}: {e}")

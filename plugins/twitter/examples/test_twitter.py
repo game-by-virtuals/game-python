@@ -3,8 +3,8 @@ from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 
 # Define your options with the necessary credentials
 options = {
-    "id": "test_twitter_worker",
-    "name": "Test Twitter Worker",
+    "id": "test_twitter_plugin",
+    "name": "Test Twitter Plugin",
     "description": "An example Twitter Plugin for testing.",
     "credentials": {
         "bearerToken": os.environ.get("TWITTER_BEARER_TOKEN"),
@@ -19,16 +19,16 @@ options = {
 twitter_plugin = TwitterPlugin(options)
 
 # Test case 1: Post a Tweet
-print("Running Test Case 1: Post a Tweet")
+print("\nRunning Test Case 1: Post a Tweet")
 post_tweet_fn = twitter_plugin.get_function('post_tweet')
-post_tweet_fn("Hi! Hello world! This is a test tweet from the Twitter Plugin!")
+post_tweet_fn("Hello world! This is a test tweet from the Twitter Plugin!", media_ids=[])
 print("Posted tweet!")
 
 # Test case 2: Reply to a Tweet
 print("\nRunning Test Case 2: Reply to a Tweet")
 reply_tweet_fn = twitter_plugin.get_function('reply_tweet')
-reply_tweet_fn(tweet_id=1879472470362816626, reply="Hey! This is a test reply!")
-print("Liked tweet!")
+reply_tweet_fn(tweet_id=1879472470362816626, reply="Hey! This is a test reply!", media_ids=[])
+print("Replied to tweet!")
 
 # Test case 3: Like a Tweet
 print("\nRunning Test Case 3: Like a Tweet")
@@ -39,7 +39,7 @@ print("Liked tweet!")
 # Test case 4: Quote a Tweet
 print("\nRunning Test Case 4: Quote a Tweet")
 quote_tweet_fn = twitter_plugin.get_function('quote_tweet')
-quote_tweet_fn(tweet_id=1879472470362816626, quote="Hey! This is a test quote tweet!")
+quote_tweet_fn(tweet_id=1879472470362816626, quote="Hey! This is a test quote tweet!", media_ids=[])
 print("Quoted tweet!")
 
 # Test case 5: Get Metrics
