@@ -50,10 +50,11 @@ class Worker:
         # specific additional instruction for the worker (PROMPT)
         instruction: Optional[str] = "",
         model_name: str = "Llama-3.1-405B-Instruct",
+        v2_engine: bool = True
     ):
 
         if api_key.startswith("apt-"):
-            self.client = GAMEClientV2(api_key)
+            self.client = GAMEClientV2(api_key, v2_engine)
         else:
             self.client = GAMEClient(api_key)
             

@@ -1,14 +1,16 @@
+import uuid
 import requests
 from typing import List, Dict
 
 class GAMEClientV2:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, v2_engine: bool = False):
         self.api_key = api_key
         self.base_url = "https://sdk.game.virtuals.io/v2"
         self.headers = {
             "Content-Type": "application/json",
             "x-api-key": self.api_key
         }
+        self.v2_engine = v2_engine
 
     def create_agent(self, name: str, description: str, goal: str) -> str:
         """
@@ -57,7 +59,8 @@ class GAMEClientV2:
         """
         payload = {
             "data": {
-                "task": task
+                "task": task,
+                "v2_engine": self.v2_engine
             }
         }
 
@@ -77,7 +80,7 @@ class GAMEClientV2:
             f"{self.base_url}/agents/{agent_id}/tasks/{submission_id}/next",
             headers=self.headers | {"model_name": model_name},
             json={
-                "data": data
+                "data": data | {"v2_engine": self.v2_engine}
             }
         )
 
@@ -87,16 +90,34 @@ class GAMEClientV2:
         response_json = response.json()
 
         return response_json["data"]
+    
+    def create_session(self, agent_id: str) -> str:
+        """
+        API call to create a session for an agent
+        """
+        if self.v2_engine:
+            response = requests.post(
+                f"{self.base_url}/agents/{agent_id}/actions/start",
+                headers=self.headers)
+            
+            session_id: str = self._get_response_body(response).get("session_id")
+        else:
+            session_id = str(uuid.uuid4())
 
-    def get_agent_action(self, agent_id: str, data: dict, model_name: str) -> Dict:
+        if not session_id:
+            raise Exception("Failed to create session.")
+
+        return session_id
+
+    def get_agent_action(self, agent_id: str, data: dict, model_name: str, session_id: str) -> Dict:
         """
         API call to get agent actions/next step (for agent)
         """
         response = requests.post(
             f"{self.base_url}/agents/{agent_id}/actions",
-            headers=self.headers | {"model_name": model_name},
+            headers=self.headers | {"model_name": model_name, "session_id": session_id},
             json={
-                "data": data
+                "data": data | {"v2_engine": self.v2_engine}
             }
         )
 

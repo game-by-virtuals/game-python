@@ -275,7 +275,8 @@ chaos_agent = Agent(
     agent_description="You are a mischievous master of chaos is very strong but with a very short attention span, and not so much brains",
     get_agent_state_fn=get_agent_state_fn,
     workers=[fruit_thrower, furniture_thrower],
-    model_name="Llama-3.1-405B-Instruct"
+    model_name="Llama-3.1-405B-Instruct",
+    v2_engine=False
 )
 
 # # interact and instruct the worker to do something

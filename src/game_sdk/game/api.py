@@ -1,3 +1,4 @@
+import uuid
 import requests
 from typing import List, Dict, Optional
 
@@ -114,13 +115,19 @@ class GAMEClient:
             data=data,
             extra_headers={"model_name": model_name},
         )
+    
+    def create_session(self, agent_id: str) -> str:
+        """
+        Create a session for an agent
+        """
+        return str(uuid.uuid4())
 
-    def get_agent_action(self, agent_id: str, data: dict, model_name: str) -> Dict:
+    def get_agent_action(self, agent_id: str, data: dict, model_name: str, session_id: str) -> Dict:
         """
         Get agent actions/next step (for agent)
         """
         return self._post(
             endpoint=f"/v2/agents/{agent_id}/actions",
             data=data,
-            extra_headers={"model_name": model_name},
+            extra_headers={"model_name": model_name, "session_id": session_id},
         )

@@ -5,30 +5,6 @@ from game_sdk.game.custom_types import Function, FunctionResult, FunctionResultS
 from game_sdk.game.api import GAMEClient
 from game_sdk.game.api_v2 import GAMEClientV2
 
-class Session:
-    """
-    Manages a unique session for agent interactions.
-
-    A Session maintains state for a single interaction sequence, including function results
-    and a unique identifier. It can be reset to start a fresh interaction sequence.
-
-    Attributes:
-        id (str): Unique identifier for the session, generated using UUID4.
-        function_result (Optional[FunctionResult]): Result of the last executed function.
-    """
-    def __init__(self):
-        self.id = str(uuid.uuid4())
-        self.function_result: Optional[FunctionResult] = None
-
-    def reset(self):
-        """
-        Resets the session by generating a new ID and clearing function results.
-        This is useful when starting a new interaction sequence.
-        """
-        self.id = str(uuid.uuid4())
-        self.function_result = None
-
-
 class WorkerConfig:
     """
     Configuration for a GAME SDK worker.
@@ -106,10 +82,11 @@ class Agent:
                  get_agent_state_fn: Callable,
                  workers: Optional[List[WorkerConfig]] = None,
                  model_name: str = "Llama-3.1-405B-Instruct",
+                 v2_engine: bool = True
                  ):
 
         if api_key.startswith("apt-"):
-            self.client = GAMEClientV2(api_key)
+            self.client = GAMEClientV2(api_key, v2_engine)
         else:
             self.client = GAMEClient(api_key)
 
@@ -120,9 +97,9 @@ class Agent:
         # checks
         if not self._api_key:
             raise ValueError("API key not set")
-
-        # initialize session
-        self._session = Session()
+        
+        self._function_result: Optional[FunctionResult] = None
+        self._session_id: Optional[str] = None
 
         self.name = name
         self.agent_goal = agent_goal
@@ -181,7 +158,7 @@ class Agent:
 
     def reset(self):
         """ Reset the agent session"""
-        self._session.reset()
+        self._session_id = self.client.create_session(self.agent_id)
 
     def add_worker(self, worker_config: WorkerConfig):
         """Add worker to worker dict for the agent"""
@@ -237,11 +214,15 @@ class Agent:
             "version": "v2",
         }
 
+        if not self._session_id:
+            raise Exception("No session started for agent")
+
         # make API call
         response = self.client.get_agent_action(
             agent_id=self.agent_id,
             data=data,
-            model_name=self._model_name
+            model_name=self._model_name,
+            session_id=self._session_id
         )
 
         return ActionResponse.model_validate(response)
@@ -249,7 +230,7 @@ class Agent:
     def step(self):
 
         # get next task/action from GAME API
-        action_response = self._get_action(self._session.function_result)
+        action_response = self._get_action(self._function_result)
         action_type = action_response.action_type
 
         print("#" * 50)
@@ -277,17 +258,17 @@ class Agent:
             if not action_response.action_args:
                 raise ValueError("No function information provided by GAME")
 
-            self._session.function_result = (
+            self._function_result = (
                 self.workers[self.current_worker_id]
                 .action_space[action_response.action_args["fn_name"]]
                 .execute(**action_response.action_args)
             )
 
-            print(f"Function result: {self._session.function_result}")
+            print(f"Function result: {self._function_result}")
 
             # update worker states
             updated_worker_state = self.workers[self.current_worker_id].get_state_fn(
-                self._session.function_result, self.worker_states[self.current_worker_id])
+                self._function_result, self.worker_states[self.current_worker_id])
             self.worker_states[self.current_worker_id] = updated_worker_state
 
             update_observation = "worker"
@@ -311,7 +292,7 @@ class Agent:
 
         # update agent state
         self.agent_state = self.get_agent_state_fn(
-            self._session.function_result, self.agent_state)
+            self._function_result, self.agent_state)
         
         # update observation (saved state)
         if update_observation == "task":
@@ -342,9 +323,9 @@ class Agent:
                 "is_global": True
             }
 
-        return action_response, self._session.function_result
+        return action_response, self._function_result
 
     def run(self):
-        self._session = Session()
+        self._session_id = self.client.create_session(self.agent_id)
         while True:
             self.step()

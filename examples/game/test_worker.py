@@ -108,7 +108,8 @@ worker = Worker(
     instruction="Choose the evil-est actions.",  
     get_state_fn=get_state_fn,
     action_space=action_space,
-    model_name="Llama-3.1-405B-Instruct"
+    model_name="Llama-3.3-70B-Instruct",
+    v2_engine=True
 )
 
 # interact and instruct the worker to do something
