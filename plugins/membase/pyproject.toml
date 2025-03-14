@@ -1,0 +1,12 @@
+[project]
+name = "membase_plugin_gamesdk"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "membase>=0.1.5",
+]
+
+[tool.uv.sources]
+membase = { git = "https://github.com/unibaseio/membase.git" }
