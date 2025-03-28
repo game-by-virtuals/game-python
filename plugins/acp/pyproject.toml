@@ -1,0 +1,20 @@
+[project]
+name = "acp_plugin_gamesdk"
+version = "0.1.0"
+description = "ACP Plugin for Python SDK for GAME by Virtuals"
+authors = [
+    {name = "Steven Lee Soon Fatt", email = "steven@virtuals.io"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "web3>=7.9.0",
+    "virtuals-sdk>=0.1.6",
+    "aiohttp>=3.11.14",
+    "eth-account>=0.13.5",
+    "eth-typing>=5.2.0",
+    "eth-utils>=5.2.0",
+    "requests>=2.32.3",
+    "pydantic>=2.10.6",
+]
+

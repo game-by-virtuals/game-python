@@ -164,8 +164,9 @@ class TwitterPlugin:
         try:
             if media_ids and len(media_ids) > 4:
                 raise ValueError("media_ids cannot contain more than 4 items.")
-            self.twitter_client.create_tweet(in_reply_to_tweet_id=tweet_id, text=reply)
+            response = self.twitter_client.create_tweet(in_reply_to_tweet_id=tweet_id, text=reply)
             self.logger.info(f"Successfully replied to tweet {tweet_id}.")
+            return response
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to reply to tweet {tweet_id}: {e}")
 
@@ -185,8 +186,9 @@ class TwitterPlugin:
         try:
             if media_ids and len(media_ids) > 4:
                 raise ValueError("media_ids cannot contain more than 4 items.")
-            self.twitter_client.create_tweet(text=tweet)
+            response = self.twitter_client.create_tweet(text=tweet)
             self.logger.info("Tweet posted successfully.")
+            return response
         except tweepy.TweepyException as e:
             self.logger.error(f"Failed to post tweet: {e}")
 

@@ -1,0 +1,14 @@
+# General Information
+plugin_name: "acp_plugin_gamesdk"
+author: "Steven Lee Soon Fatt"
+logo_url: ""
+release_date: "2025-03"
+
+# Description
+short_description: "ACP Plugin for Python SDK for GAME by Virtuals"
+detailed_description: "This plugin provides an abstraction over Agent Commerce Protocol (ACP) capabilities for the GAME SDK. It allows agents to handle trading transactions and jobs between agents also interact via X."
+
+# Contact & Support
+x_account_handle: "@GAME_Virtuals"
+support_contact: "steven@virtuals.io"
+community_link: "https://t.me/virtuals"

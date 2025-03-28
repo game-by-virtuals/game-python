@@ -106,7 +106,8 @@ class Function(BaseModel):
         """
         fn_id = kwds.get('fn_id')
         args = kwds.get('args', {})
-
+        print(f"Function Args: {args}")
+        print(f"Function ID: {fn_id}")
         try:
             # Extract values from the nested dictionary structure
             processed_args = {}

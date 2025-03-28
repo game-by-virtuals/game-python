@@ -124,6 +124,7 @@ class GameTwitterPlugin:
         payload = {"content": tweet}
         if media_ids:
             payload["mediaIds"] = media_ids
+            
         return self._fetch_api("/post", "POST", data=payload)
 
     def _search_tweets(self, query: str) -> Dict[str, Any]:
@@ -172,7 +173,7 @@ class GameTwitterPlugin:
         """
         endpoint = "/mentions"
         if pagination_token:
-            endpoint += f"?paginationToken={paginationToken}"
+            endpoint += f"?paginationToken={pagination_token}"
         return self._fetch_api(endpoint, "GET")
 
     def _followers(self, pagination_token: Optional[str] = None) -> Dict[str, Any]:
@@ -181,7 +182,7 @@ class GameTwitterPlugin:
         """
         endpoint = "/followers"
         if pagination_token:
-            endpoint += f"?paginationToken={paginationToken}"
+            endpoint += f"?paginationToken={pagination_token}"
         return self._fetch_api(endpoint, "GET")
 
     def _following(self, pagination_token: Optional[str] = None) -> Dict[str, Any]:
@@ -190,7 +191,7 @@ class GameTwitterPlugin:
         """
         endpoint = "/following"
         if pagination_token:
-            endpoint += f"?paginationToken={paginationToken}"
+            endpoint += f"?paginationToken={pagination_token}"
         return self._fetch_api(endpoint, "GET")
     
     def upload_media(self, media: bytes) -> str:
