@@ -6,7 +6,6 @@ import dotenv
 
 dotenv.load_dotenv()
 
-
 stock: Dict[str, Any] = {
     "item1": {
         "amount": 0,
@@ -18,7 +17,6 @@ stock: Dict[str, Any] = {
         "amount": 0,
     },
 }
-
 
 items_for_sale: Dict[str, Any] = {
     "item1": {"stock_price": 10, "description": "Item 1"},
@@ -36,8 +34,6 @@ demand: Dict[str, Any] = {
 def get_demand(price: float, max_demand: int, price_sensitivity: float):
     return max(0, max_demand - (price_sensitivity * price))
 
-
-goal_state: Dict[str, Any] = {"inventory": stock}
 
 wallet = {"balance": 100}
 
