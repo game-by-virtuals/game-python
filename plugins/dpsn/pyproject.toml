@@ -1,0 +1,11 @@
+[project]
+name = "dpsn-plugin-gamesdk"
+version = "0.1.0"
+description = "DPSN Plugin for Python SDK for GAME by Virtuals"
+authors = [{ name = "dpsn-dev", email = "dev@dpsn.org" }]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["dpsn-client==1.0.0.post1"]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
