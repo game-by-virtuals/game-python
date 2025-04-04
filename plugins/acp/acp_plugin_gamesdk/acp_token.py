@@ -1,7 +1,6 @@
-import asyncio
 from enum import IntEnum
 import time
-from typing import Optional, Tuple, TypedDict, List
+from typing import Optional, Tuple, TypedDict
 from datetime import datetime
 from web3 import Web3
 from eth_account import Account
@@ -9,6 +8,9 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from .acp_token_abi import ACP_TOKEN_ABI
+import requests
+from eth_account.messages import encode_defunct
+import json
 
 class MemoType(IntEnum):
     MESSAGE = 0
@@ -44,18 +46,23 @@ class AcpToken:
     def __init__(
         self,
         wallet_private_key: str,
+        agent_wallet_address: str,
         network_url: str,
         contract_address: str = "0x5e4ee2620482f7c4fee12bf27b095e48d441f5cf",
         virtuals_token_address: str = "0xbfAB80ccc15DF6fb7185f9498d6039317331846a"
     ):
         self.web3 = Web3(Web3.HTTPProvider(network_url))
         self.account = Account.from_key(wallet_private_key)
+        self.agent_wallet_address = agent_wallet_address
         self.contract_address = Web3.to_checksum_address(contract_address)
         self.virtuals_token_address = Web3.to_checksum_address(virtuals_token_address)
         self.contract = self.web3.eth.contract(
             address=self.contract_address,
             abi=ACP_TOKEN_ABI
         )
+
+    def get_agent_wallet_address(self) -> str:
+        return self.agent_wallet_address
         
     def get_contract_address(self) -> str:
         return self.contract_address
@@ -189,24 +196,31 @@ class AcpToken:
         retries = 3
         while retries > 0:
             try:
-                transaction = self.contract.functions.signMemo(
-                    memo_id,
-                    is_approved,
-                    reason or ""
-                ).build_transaction({
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                })
-                
-                signed_txn = self.web3.eth.account.sign_transaction(
-                    transaction,
-                    self.account.key
-                )
-                
-                tx_hash = self.web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                self.web3.eth.wait_for_transaction_receipt(tx_hash)
-                
-                return tx_hash.hex()
+                print(f"Custom python SDK logic for signing memo_id: {memo_id}")
+                # Construct unsigned transaction
+                encoded_data = self.contract.encode_abi("signMemo", args=[memo_id, is_approved, reason])
+                private_key_hex = self.wallet_private_key[2:]
+                trx_data = {
+                    "target": self.get_contract_address(),
+                    "value": "0",
+                    "data": encoded_data
+                }
+                message_json = json.dumps(trx_data, separators=(".", ":"), sort_keys=False)
+                message_bytes = message_json.encode()
+                account = Account.from_key(private_key_hex)
+                # Sign the transaction
+                message = encode_defunct(message_bytes)
+                signature = account.sign_message(message).signature.hex()
+                payload = {
+                    "agentWallet": self.get_agent_wallet_address(),
+                    "trxData": trx_data,
+                    "signature": signature
+                }
+                # Submit to custom API
+                api_url = "https://acpx.virtuals.gg/api/acp-agent-wallets/transactions"
+                response = requests.post(api_url, json=payload)
+                print("Status:", response.status_code)
+                print("Response:", response.json())
             except Exception as error:
                 print(f"Error signing memo: {error}")
                 retries -= 1

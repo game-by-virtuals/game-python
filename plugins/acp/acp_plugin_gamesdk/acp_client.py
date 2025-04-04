@@ -19,6 +19,11 @@ class AcpClient:
     @property
     def wallet_address(self) -> str:
         return self.acp_token.get_wallet_address()
+    
+    @property
+    
+    def agent_wallet_address(self) -> str:
+        return self.acp_token.get_agent_wallet_address()
 
     def get_state(self) -> AcpState:
         response =  requests.get(
