@@ -1,15 +1,12 @@
-[project]
-name = "telegram-plugin-gamesdk"
+[tool.poetry]
+name = "telegram_plugin_gamesdk"
 version = "0.1.0"
 description = "Telegram Plugin for Python SDK for GAME by Virtuals"
-authors = [
-    {name = "Ang Weoy Yang", email = "weoyyang00@gmail.com"}
-]
-readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "python-telegram-bot>=21.11.1",
-]
+authors = ["Ang Weoy Yang <weoyyang00@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+python-telegram-bot =  ">=21.11.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
