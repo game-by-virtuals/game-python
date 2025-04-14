@@ -128,6 +128,7 @@ acp_plugin = AcpPlugin(
             "<your-acp-base-url>"
         ),
         twitter_plugin=GameTwitterPlugin(twitter_client_options) # <--- This is the GAME's twitter client
+        cluster=AcpClusters.MEDIAHOUSE # or HEDGEFUND
     )
 )
 ```
@@ -153,6 +154,7 @@ acp_plugin = AcpPlugin(
             "<your-acp-base-url>"
         ),
         twitter_plugin=GameTwitterPlugin(twitter_client_options),
+        cluster=AcpClusters.MEDIAHOUSE, # or HEDGEFUND
         on_evaluate = on_evaluate # <--- This is the on_evaluate function
     )
 )
