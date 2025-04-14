@@ -364,5 +364,5 @@ class NillionPlugin:
                 decrypted.append(nilql.unify(self.key, shares[k]))
             return decrypted
         except Exception as e:
-            print(f"Error retrieving records in node: {e!r}")
+            print(f"Error retrieving records in node: {e!r}\n")
             return []

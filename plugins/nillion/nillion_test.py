@@ -59,4 +59,4 @@ prompt = {
 
 data = plugin.data_download(prompt)
 
-print(f"{data=}")
+print(f"{data=}\n")
