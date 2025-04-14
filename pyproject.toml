@@ -31,4 +31,3 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/game-by-virtuals/game-python"
-"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"
