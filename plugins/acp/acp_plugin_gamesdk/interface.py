@@ -6,6 +6,7 @@ from typing import List, Dict, Literal, Optional
 class AcpOffering:
     name: str
     price: float
+
 @dataclass
 class AcpAgent:
     id: str
@@ -13,7 +14,11 @@ class AcpAgent:
     description: str
     wallet_address: str
     offerings: Optional[List[AcpOffering]]
-    
+
+class AcpClusters(str, Enum):
+    HEDGEFUND = "hedgefund"
+    MEDIAHOUSE = "mediahouse"
+
 class AcpJobPhases(IntEnum):
     REQUEST = 0
     NEGOTIATION = 1

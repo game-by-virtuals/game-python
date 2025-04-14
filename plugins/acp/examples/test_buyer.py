@@ -6,7 +6,7 @@ from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
 from acp_plugin_gamesdk.acp_token import AcpToken
 from twitter_plugin_gamesdk.game_twitter_plugin import GameTwitterPlugin
 from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
-from acp_plugin_gamesdk.interface import IDeliverable
+from acp_plugin_gamesdk.interface import IDeliverable, AcpClusters
 def ask_question(query: str) -> str:
     return input(query)
 
@@ -50,6 +50,7 @@ def main():
                 "https://acpx-staging.virtuals.io/api"
             ),
             twitter_plugin=GameTwitterPlugin(options),
+            cluster=AcpClusters.MEDIAHOUSE, # or HEDGEFUND
             on_evaluate=on_evaluate # will initialize socket connection for real-time communication
         )
     )

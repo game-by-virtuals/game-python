@@ -15,14 +15,14 @@ from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 from twitter_plugin_gamesdk.game_twitter_plugin import GameTwitterPlugin
 from acp_plugin_gamesdk.acp_client import AcpClient
 from acp_plugin_gamesdk.acp_token import AcpToken
-from acp_plugin_gamesdk.interface import AcpJobPhasesDesc, IDeliverable, IInventory
+from acp_plugin_gamesdk.interface import AcpClusters, AcpJobPhasesDesc, IDeliverable, IInventory
 
 @dataclass
 class AcpPluginOptions:
     api_key: str
     acp_token_client: AcpToken
     twitter_plugin: TwitterPlugin | GameTwitterPlugin = None
-    cluster: Optional[str] = None
+    cluster: Optional[AcpClusters] = None
     on_evaluate: Optional[Callable[[IDeliverable], Tuple[bool, str]]] = None
 
 SocketEvents = {
