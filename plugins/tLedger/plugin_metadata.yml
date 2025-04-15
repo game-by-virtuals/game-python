@@ -1,0 +1,14 @@
+# General Information
+plugin_name: "tLedger_plugin_gamesdk"
+author: "tLedger Engineering Team"
+logo_url: "https://drive.google.com/file/d/1PQroliD6_3MraAAR2WbqLbNOJLLy5DAX/view?usp=share_link"
+release_date: "2025-04"
+
+# Description
+short_description: "tLedger Plugin for Game SDK. TLedger is a blockchain-agnostic agent account management platform"
+detailed_description: "tLedger is t54’s foundational product—a blockchain-agnostic account & ledger designed to support AI agent-initiated financial transactions. It enables developers to create and manage agent-level virtual accounts, set programmable spending limits, and trigger on-chain payments via a lightweight SDK. Each agent is provisioned with multi-asset wallets (e.g., USDT, SOL), and all activity is surfaced through robust APIs and a web-based portal. The platform enforces compliance through Know Your Agent (KYA) protocols and centralized risk controls, giving developers the tooling to deploy financially autonomous agents at scale."
+
+# Contact & Support
+x_account_handle: "@GAME_Virtuals"
+support_contact: "https://discord.gg/virtualsio"
+community_link: "https://t.me/virtuals"
