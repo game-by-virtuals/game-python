@@ -105,7 +105,7 @@ class Agent:
                  agent_description: str,
                  get_agent_state_fn: Callable,
                  workers: Optional[List[WorkerConfig]] = None,
-                 model_name: str = "Llama-3.1-405B-Instruct",
+                 model_name: str = "Llama-3.3-70B-Instruct",
                  ):
 
         if api_key.startswith("apt-"):
@@ -142,11 +142,7 @@ class Agent:
         self.agent_state = self.get_agent_state_fn(None, None)
 
         # initialize observation
-        observation_content = self.agent_state["observations"] if "observations" in self.agent_state else ""
-        self.observation = {
-            "content": observation_content,
-            "is_global": True,
-        }
+        self.observation = None
 
         # create agent
         self.agent_id = self.client.create_agent(
@@ -313,13 +309,13 @@ class Agent:
         self.agent_state = self.get_agent_state_fn(
             self._session.function_result, self.agent_state)
         
-        # update observation (saved state)
+        # update observation (saved state) - no interruptions (is_global should always be False)
         if update_observation == "task":
             if "observations" in self.agent_state:
                 observation_content = self.agent_state["observations"]
                 self.observation = {
                     "content": observation_content,
-                    "is_global": True,
+                    "is_global": False,
                 }
             else:
                 self.observation = None
@@ -332,15 +328,9 @@ class Agent:
                     "is_global": False,
                 }
             else:
-                self.observation = {
-                    "content": "",
-                    "is_global": True
-                }
+                self.observation = None
         else:
-            self.observation = {
-                "content": "",
-                "is_global": True
-            }
+            self.observation = None
 
         return action_response, self._session.function_result
 

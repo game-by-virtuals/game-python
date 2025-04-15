@@ -251,7 +251,6 @@ class Agent:
         api_key: str,
         goal: str = "",
         description: str = "",
-        world_info: str = "",
         main_heartbeat: int = 15,
         reaction_heartbeat: int = 5,
         task_description: str = "",
@@ -260,7 +259,6 @@ class Agent:
         self.game_sdk = sdk.GameSDK(api_key)
         self.goal = goal
         self.description = description
-        self.world_info = world_info
         self.enabled_functions: List[str] = []
         self.custom_functions: List[Function] = []
         self.main_heartbeat = main_heartbeat
@@ -276,10 +274,6 @@ class Agent:
     
     def set_description(self, description: str):
         self.description = description
-        return True
-    
-    def set_world_info(self, world_info: str):
-        self.world_info = world_info
         return True
     
     def set_main_heartbeat(self, main_heartbeat: int):
@@ -311,9 +305,6 @@ class Agent:
     def get_description(self) -> str:
         return self.description
     
-    def get_world_info(self) -> str:
-        return self.world_info
-
     def list_available_default_twitter_functions(self) -> Dict[str, str]:
         """
         List all of the default functions (currently default functions are only available for Twitter/X platform)
@@ -347,7 +338,6 @@ class Agent:
             session_id,
             self.goal,
             self.description,
-            self.world_info,
             self.enabled_functions,
             self.custom_functions
         )
@@ -366,7 +356,6 @@ class Agent:
             tweet_id=tweet_id,
             goal=self.goal,
             description=self.description,
-            world_info=self.world_info,
             functions=self.enabled_functions,
             custom_functions=self.custom_functions
         )
@@ -378,7 +367,6 @@ class Agent:
         return self.game_sdk.deploy(
             self.goal,
             self.description,
-            self.world_info,
             self.enabled_functions,
             self.custom_functions,
             self.main_heartbeat,
@@ -393,7 +381,6 @@ class Agent:
         export_dict = {
             "goal": self.goal,
             "description": self.description,
-            "worldInfo": self.world_info,
             "functions": self.enabled_functions,
             "customFunctions": [
                 {

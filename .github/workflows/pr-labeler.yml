@@ -3,7 +3,7 @@ name: Auto Label PR
 on:
   pull_request:
     branches: [ "main" ]
-    types: [opened, edited, reopened, synchronize]
+    types: [ opened, edited, reopened, synchronize ]
 
 jobs:
   label-plugin-pr:

@@ -49,7 +49,7 @@ class Worker:
         action_space: List[Function],
         # specific additional instruction for the worker (PROMPT)
         instruction: Optional[str] = "",
-        model_name: str = "Llama-3.1-405B-Instruct",
+        model_name: str = "Llama-3.3-70B-Instruct",
     ):
 
         if api_key.startswith("apt-"):

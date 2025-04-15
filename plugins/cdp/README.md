@@ -16,7 +16,7 @@ A plugin for interacting with Coinbase's CDP through the GAME SDK. This plugin p
 
 ```bash
 # Install from local directory
-pip install -e plugins/coinbase
+pip install -e plugins/cdp
 
 # Dependencies will be installed automatically:
 # - game-sdk>=0.1.1

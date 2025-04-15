@@ -1,0 +1,14 @@
+# General Information
+plugin_name: "rag_pinecone_gamesdk"
+author: "Michiel Voortman"
+logo_url: ""
+release_date: "2025-03"
+
+# Description
+short_description: "RAG (Retrieval Augmented Generation) Plugin with Pinecone for GAME SDK"
+detailed_description: "This plugin provides Retrieval Augmented Generation capabilities using Pinecone as the vector database for the GAME SDK. It allows agents to store, retrieve, and use contextual information to enhance their responses."
+
+# Contact & Support
+x_account_handle: "@VoortmanMichiel"
+support_contact: "eve@eve-protocol.ai"
+community_link: "https://t.me/eveprotocol"

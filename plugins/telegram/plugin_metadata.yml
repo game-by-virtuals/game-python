@@ -1,0 +1,14 @@
+# General Information
+plugin_name: "telegram_plugin_gamesdk"
+author: "Yang from Virtuals Protocol"
+logo_url: "https://drive.google.com/drive/folders/1AdRKQac0a-ORqdE6mtV4wGdF8y3DhIyo"
+release_date: "2025-03"
+
+# Description
+short_description: "Telegram Plugin for Game SDK"
+detailed_description: "This plugin provides a Telegram integration for the Game SDK. It allows developers to easily integrate Telegram functionalities like sending, deleting, pin, messages or media files etc. Credits to the yk(yenkhoon) for building the Telegram plugin for GAME Node SDK."
+
+# Contact & Support
+x_account_handle: "@GAME_Virtuals"
+support_contact: "https://discord.gg/virtualsio"
+community_link: "https://t.me/virtuals"

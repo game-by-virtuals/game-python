@@ -1,0 +1,16 @@
+[project]
+name = "telegram-plugin-gamesdk"
+version = "0.1.0"
+description = "Telegram Plugin for Python SDK for GAME by Virtuals"
+authors = [
+    {name = "Ang Weoy Yang", email = "weoyyang00@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "python-telegram-bot>=21.11.1",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

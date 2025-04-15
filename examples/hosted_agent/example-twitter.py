@@ -5,7 +5,6 @@ agent = Agent(
     api_key=os.environ.get("VIRTUALS_API_KEY"),
     goal="search for best songs",
     description="Test Description",
-    world_info="Test World Info",
     task_description="reply to tweet that worth your attention, if not ignore"
 )
 
@@ -48,9 +47,6 @@ Character description:
 
 Character goal:
 {{twitterGoal}}
-
-These are the world info that might be useful as additional context for your response. You do not need to use any of the information describe in this section if you don't need it.
-{{worldInfo}}
 
 {{retrieveKnowledge}}
 
@@ -112,3 +108,6 @@ agent.simulate_twitter(session_id="session-twitter")
 
 # reset production memory
 #agent.reset_memory()
+
+# deploy agent
+# agent.deploy_twitter()

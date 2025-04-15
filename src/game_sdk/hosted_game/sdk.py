@@ -25,7 +25,7 @@ class GameSDK:
 
         return functions
 
-    def simulate(self, session_id: str,  goal: str, description: str, world_info: str, functions: list, custom_functions: list):
+    def simulate(self, session_id: str,  goal: str, description: str,  functions: list, custom_functions: list):
         """
         Simulate the agent configuration
         """
@@ -36,7 +36,7 @@ class GameSDK:
                     "sessionId": session_id,
                     "goal": goal,
                     "description": description,
-                    "worldInfo": world_info,
+                    "worldInfo": "",
                     "functions": functions,
                     "customFunctions": [x.toJson() for x in custom_functions]
                 }
@@ -50,7 +50,7 @@ class GameSDK:
         return response.json()["data"]
 
     def react(self, session_id: str, platform: str, goal: str,
-              description: str, world_info: str, functions: list, custom_functions: list,
+              description: str, functions: list, custom_functions: list,
               event: str = None, task: str = None, tweet_id: str = None):
         """
         Simulate the agent configuration
@@ -61,7 +61,7 @@ class GameSDK:
             "sessionId": session_id,
             "goal": goal,
             "description": description,
-            "worldInfo": world_info,
+            "worldInfo": "",
             "functions": functions,
             "customFunctions": [x.toJson() for x in custom_functions]
         }
@@ -90,14 +90,14 @@ class GameSDK:
 
         return response.json()["data"]
 
-    def deploy(self, goal: str, description: str, world_info: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, game_engine_model: str = "llama_3_1_405b"):
+    def deploy(self, goal: str, description: str, functions: list, custom_functions: list, main_heartbeat: int, reaction_heartbeat: int, tweet_usernames: list = None, templates: list = None, game_engine_model: str = "llama_3_1_405b"):
         """
         Simulate the agent configuration
         """
         payload = {
             "goal": goal,
             "description": description,
-            "worldInfo": world_info,
+            "worldInfo": "",
             "functions": functions,
             "customFunctions": [x.toJson() for x in custom_functions],
             "gameState": {

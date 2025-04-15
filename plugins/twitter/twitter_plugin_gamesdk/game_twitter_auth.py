@@ -1,4 +1,6 @@
 import argparse
+import threading
+
 import requests
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -36,17 +38,23 @@ class AuthHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-type", "text/plain")
                 self.end_headers()
                 self.wfile.write(b"Authentication successful! You may close this window and return to the terminal.")
-                print("Authentication successful!")
-                print(f"Access Token: {access_token}")
-                self.server.shutdown()  # Stop the server after successful auth
+                print("Authenticated! Here's your access token:")
+                print(access_token)
             else:
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(b"Invalid request")
+                print("Authentication failed! Please try again.")
         else:
             self.send_response(404)
             self.end_headers()
             self.wfile.write(b"Not Found")
+            print("Not Found")
+
+        threading.Thread(target=self.server.shutdown, daemon=True).start() # Stop the server after handling the request
+
+    def log_message(self, format, *args):
+        pass
 
 
 class AuthManager:
@@ -81,9 +89,9 @@ class AuthManager:
         HANDLER_CLASS = AuthHandler
         with HTTPServer(SERVER_ADDRESS, HANDLER_CLASS) as server:
             login_url = AuthManager.get_login_url(api_key)
-            print("Waiting for authentication...")
+            print("\nWaiting for authentication...\n")
             print("Visit the following URL to authenticate:")
-            print(login_url)
+            print(login_url + "\n")
             webbrowser.open(login_url)
             server.serve_forever()
 

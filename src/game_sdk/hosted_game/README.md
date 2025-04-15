@@ -40,7 +40,6 @@ agent = Agent(
     api_key=VIRTUALS_API_KEY,
     goal="Autonomously analyze crypto markets and provide trading insights",
     description="HODL-9000: A meme-loving trading bot powered by hopium and ramen",
-    world_info="Virtual crypto trading environment where 1 DOGE = 1 DOGE",
     task_description="Process incoming tweet. Ignore if it is boring or unimportant. Total replies made: {{replyCount}}. Ignore if the conversation has gone too long."
 )
 ```
@@ -50,22 +49,19 @@ You can also initialize the agent first with just the API key and set the goals,
 ```python
 agent = Agent(api_key=VIRTUALS_API_KEY)
 
-# check what is current goal, descriptions, world_info and task_description
+# check what is current goal, descriptions and task_description
 agent.get_goal()
 agent.get_description()
-agent.get_world_info()
 agent.get_task_description()
 
 # Set components individually - set change the agent goal/description/worldinfo/task_description
 agent.set_goal("Autonomously analyze crypto markets and provide trading insights")
 agent.set_description("HODL-9000: A meme-loving trading bot powered by hopium and ramen")
-agent.set_world_info("Virtual crypto trading environment where 1 DOGE = 1 DOGE")
 agent.set_task_description("Process incoming tweet. Ignore if it is boring or unimportant. Total replies made: {{replyCount}}. Ignore if the conversation has gone too long.")
 
-# check what is current goal, descriptions, world_info and task_description
+# check what is current goal, descriptions and task_description
 agent.get_goal()
 agent.get_description()
-agent.get_world_info()
 agent.get_task_description()
 
 # set game engine model
