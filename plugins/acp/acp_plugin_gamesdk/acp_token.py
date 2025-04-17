@@ -8,6 +8,7 @@ from acp_plugin_gamesdk.acp_token_abi import ACP_TOKEN_ABI
 import requests
 from eth_account.messages import encode_defunct
 import json
+import traceback
 
 class MemoType(IntEnum):
     MESSAGE = 0
@@ -225,6 +226,7 @@ class AcpToken:
         reason: Optional[str] = ""
     ) -> str:
         retries = 3
+        error = None
         while retries > 0:
             try:
                 trx_data, signature = self._sign_transaction(
@@ -246,8 +248,10 @@ class AcpToken:
                 
                 return response.json()
                 
-            except Exception as error:
+            except Exception as e:
+                error = e
                 print(f"{error}")
+                print(traceback.format_exc())
                 retries -= 1
                 time.sleep(2 * (3 - retries))
                 

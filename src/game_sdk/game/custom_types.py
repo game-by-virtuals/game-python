@@ -175,6 +175,27 @@ class HLPResponse:
     change_indicator: Optional[str] = None
     log: Sequence[dict] = field(default_factory=list)
 
+    def __str__(self) -> str:
+        steps = ""
+        for index, step in enumerate(self.plan):
+            steps += f"#{index+1} {str(step)} \n"
+
+        logs_str = ""
+        for index, log_item in enumerate(self.log):
+            logs_str += f"#{index+1} {str(log_item)} \n"
+
+        output = (
+            f"🟢 HLP Response:\n"
+            f"- Plan ID: {self.plan_id}\n"
+            f"- Reflection on Observation:\n{self.observation_reflection}\n"
+            # f"- Steps in Plan:\n{steps}\n"
+            f"- Plan Reasoning:\n{self.plan_reasoning}\n"
+            # f"- Current State in Plan:\n{self.current_state_of_execution}\n"
+            # f"- Change Indicator: {self.change_indicator}\n"
+            # f"- Logs:\n{logs_str}\n"
+        )
+        return output
+
 
 @dataclass(frozen=True)
 class LLPResponse:
@@ -196,6 +217,90 @@ class LLPResponse:
     change_indicator: Optional[str] = None
     reflection: Optional[str] = None
 
+    def __str__(self) -> str:
+        steps = ""
+        for index, step in enumerate(self.plan):
+            steps += f"#{index+1} {str(step)} \n"
+
+        output = (
+            f"🟢 LLP Response:\n"
+            f"- Plan ID: {self.plan_id}\n"
+            f"- Plan Reasoning:\n{self.plan_reasoning}\n"
+            f"- Situation Analysis:\n{self.situation_analysis}\n"
+            f"- Steps in Plan:\n{steps}\n"
+            f"- Change Indicator: {self.change_indicator}\n"
+            f"- Reflections on Plan:\n{self.reflection}\n"
+        )
+        return output
+
+
+@dataclass(frozen=True)
+class ReasoningAction:
+    """
+    Represents a detailed reasoning step for a specific task action, including reflections,
+    reasoning for the current task, the rationale for the next step, and the function to execute.
+
+    Attributes:
+        id (str): Unique identifier for this reasoning action or step.
+        task_reflection (str): Reflection on the outcomes or status of the current or previous task.
+        task_reasoning (str): Explanation of the reasoning behind the current task or decision.
+        next_step_reaseaning (str): Justification for the next step or action to be taken.
+        fn_name (str): Name of the function that should be called to perform the next step.
+    """
+    id: str
+    task_reflection: str
+    task_reasoning: str
+    next_step_reasoning: str
+    fn_name: str
+
+    def __str__(self) -> str:
+        output = (
+            f"Reasoning Action {self.id}\n"
+            f"- Task Reflection: {self.task_reflection}\n"
+            f"- Task Reasoning: {self.task_reasoning}\n"
+            f"- Next Step Reasoning: {self.next_step_reasoning}\n"
+            f"- Function Name: {self.fn_name}\n"
+        )
+        return output
+
+@dataclass(frozen=True)
+class RecentReasoningResponse:
+    """
+    Represents the most recent reasoning response from the GAME API, detailing the current task,
+    the reasoning behind the plan, reflections on previous plans, and the next steps to take.
+
+    Attributes:
+        id (str): Unique identifier for the reasoning response or task.
+        plan_reflection (str): Reflection on the progress and context of the current plan.
+        plan_reasoning (str): Explanation of the rationale behind the current plan.
+        next_task_reasoning (str): Justification for the next task to be performed.
+        task (str): Description of the current task to be executed.
+        worker_id (str): Identifier of the worker or agent responsible for executing the task.
+        actions (List[str]): List of actions to be taken as part of the current task.
+    """
+    id: str
+    plan_reflection: str
+    plan_reasoning: str
+    next_task_reasoning: str
+    task: str
+    worker_id: str
+    actions: List[ReasoningAction]
+
+    def __str__(self) -> str:
+        curr_actions = ""
+        for index, action in enumerate(self.actions):
+            curr_actions += f"#{index+1} {str(action)} \n"
+
+        output = (
+            f"Recent Reasoning\n"
+            f"- {self.id}: {self.task}\n"
+            f"- Plan Reflection:\n{self.plan_reflection}\n"
+            f"- Plan Reasoning:\n{self.plan_reasoning}\n"
+            f"- Worker ID: {self.worker_id}\n"
+            # f"- Actions to take:\n{curr_actions}\n"
+        )
+        return output
+    
 
 @dataclass(frozen=True)
 class CurrentTaskResponse:
@@ -208,10 +313,25 @@ class CurrentTaskResponse:
         location_id (str): Location identifier (defaults to "*not provided*").
         llp (Optional[LLPResponse]): Low-Level Plan response.
     """
+    task_id: str
     task: str
     task_reasoning: str
+    task_result: Optional[str]
     location_id: str = field(default="*not provided*")
     llp: Optional[LLPResponse] = None
+
+    def __str__(self) -> str:
+        llp_response = "- LLP Response: None\n" if not self.llp else self.llp
+
+        output = (
+            f"⏳ Current Task: {self.task}\n"
+            f"- Task ID: {self.task_id}\n"
+            f"- Task Reason:\n{self.task_reasoning}\n"
+            f"- Task Result:\n{self.task_result}\n"
+            f"- Location ID: {self.location_id}\n"
+            # f"{llp_response}\n"
+        )
+        return output
 
 
 @dataclass(frozen=True)
@@ -225,6 +345,20 @@ class AgentStateResponse:
     """
     hlp: Optional[HLPResponse] = None
     current_task: Optional[CurrentTaskResponse] = None
+    recent_reasoning: Optional[List[RecentReasoningResponse]] = None
+
+    def __str__(self) -> str:
+        recent_reasonings = ""
+        if self.recent_reasoning:
+            for index, reason in enumerate(self.recent_reasoning):
+                recent_reasonings += f"💭 #{index+1} {str(reason)}\n"
+
+        output = (
+            f"{self.hlp}"
+            f"{self.current_task}"
+            f"{recent_reasonings}"
+        )
+        return output
 
 # ActionResponse format returned from GAME API call
 class ActionResponse(BaseModel):
@@ -235,10 +369,26 @@ class ActionResponse(BaseModel):
         action_type (ActionType): Type of action.
         agent_state (AgentStateResponse): Agent state response.
         action_args (Optional[Dict[str, Any]]): Additional action arguments.
+        reaction_info (Optional[str]): TODO: Get explanation from Steven Lee
+        agents (Optional[List[str]]): TODO: Get explanation from Steven Lee
     """
     action_type: ActionType
     agent_state: AgentStateResponse
     action_args: Optional[Dict[str, Any]] = None
+    reaction_info: Optional[str] = None
+    agents: Optional[List[str]] = None
+
+    def __str__(self) -> str:
+        output = (
+            f"========= 📋 Action Response =========\n"
+            f"# Action Type: {self.action_type.value}\n\n"
+            f"# Agent State:\n{self.agent_state}\n\n"
+            f"# Action Arguments:\n{self.action_args}\n\n"
+            f"# Reaction Info:\n{self.reaction_info}\n\n"
+            # f"# Agents:\n{self.agents}\n\n"
+            f"========= Action Response End ========\n"
+        )
+        return output
 
 
 class ChatActionRequest(BaseModel):

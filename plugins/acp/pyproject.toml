@@ -19,6 +19,7 @@ twitter-plugin-gamesdk = ">=0.2.2"
 game-sdk = ">=0.1.5"
 python-socketio = "^5.11.1"
 websocket-client = "^1.7.0"
+dacite = "^1.9.2"
 
 [build-system]
 requires = ["poetry-core"]

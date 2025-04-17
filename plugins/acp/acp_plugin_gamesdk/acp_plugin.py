@@ -3,7 +3,7 @@ import signal
 import sys
 from typing import List, Dict, Any, Optional,Tuple
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 
 import socketio
@@ -131,8 +131,10 @@ class AcpPlugin:
         
     def get_acp_state(self) -> Dict:
         server_state = self.acp_client.get_state()
-        server_state["inventory"]["produced"] = self.produced_inventory
-        return server_state
+        print(server_state)
+        server_state.inventory.produced = self.produced_inventory
+        state = asdict(server_state)
+        return state
 
     def get_worker(self, data: Optional[Dict] = None) -> WorkerConfig:
         functions = data.get("functions") if data else [

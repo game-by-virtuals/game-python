@@ -67,10 +67,8 @@ def main():
     #     )
     # )
 
-    def get_agent_state(_: Any, _e: Any) -> dict:
+    def get_agent_state() -> dict:
         state = acp_plugin.get_acp_state()
-        print(f"State:")
-        print(state)
         return state
     
     def post_tweet(content: str, reasoning: str) -> Tuple[FunctionResultStatus, str, dict]:

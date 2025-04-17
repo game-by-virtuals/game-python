@@ -2,9 +2,10 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from web3 import Web3
 import requests
-from acp_plugin_gamesdk.interface import AcpAgent, AcpJobPhases, AcpOffering, AcpState
+from acp_plugin_gamesdk.interface import AcpAgent, AcpJobPhases, AcpOffering, AcpState, AcpJobPhasesDesc
 from acp_plugin_gamesdk.acp_token import AcpToken, MemoType
 import time
+from dacite import from_dict, Config
 import traceback
 
 
@@ -25,7 +26,9 @@ class AcpClient:
             f"{self.base_url}/states/{self.agent_wallet_address}",
             headers={"x-api-key": self.api_key}
         )
-        return response.json()
+        payload = response.json()
+        result = from_dict(data_class=AcpState, data=payload, config=Config(type_hooks={AcpJobPhasesDesc: AcpJobPhasesDesc}))
+        return result
 
     def browse_agents(self, cluster: Optional[str] = None, query: Optional[str] = None) -> List[AcpAgent]:
         url = f"{self.acp_base_url}/agents"

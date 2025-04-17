@@ -69,7 +69,7 @@ class WorkerConfig:
         self.get_state_fn = lambda function_result, current_state: {
             "instructions": self.instruction,  # instructions are set up in the state
             # places the rest of the output of the get_state_fn in the state
-            **get_state_fn(function_result, current_state),
+            **get_state_fn(),
         }
 
         self.action_space: Dict[str, Function] = {
@@ -139,7 +139,7 @@ class Agent:
         self.get_agent_state_fn = get_agent_state_fn
 
         # initialize and set up agent states
-        self.agent_state = self.get_agent_state_fn(None, None)
+        self.agent_state = self.get_agent_state_fn()
 
         # initialize observation
         self.observation = None
@@ -250,10 +250,10 @@ class Agent:
         action_type = action_response.action_type
         
         print("#" * 50)
-        print("STEP")
-        print(f"Current Task: {action_response.agent_state.current_task}")
-        print(f"Action response: {action_response}")
-        print(f"Action type: {action_type}")
+        print("👟 Agent Step")
+        # print(action_response.agent_state.current_task)
+        print(action_response)
+        # print(f"Action type: {action_type}")
 
         # if new task is updated/generated
         if (
@@ -261,7 +261,7 @@ class Agent:
             and action_response.agent_state.hlp.change_indicator
         ):
             print("New task generated")
-            print(f"Task: {action_response.agent_state.current_task}")
+            print(action_response.agent_state.current_task)
 
         # execute action
         if action_type in [
@@ -307,8 +307,7 @@ class Agent:
                 f"Unknown action type: {action_response.action_type}")
 
         # update agent state
-        self.agent_state = self.get_agent_state_fn(
-            self._session.function_result, self.agent_state)
+        self.agent_state = self.get_agent_state_fn()
         
         # update observation (saved state) - no interruptions (is_global should always be False)
         if update_observation == "task":
