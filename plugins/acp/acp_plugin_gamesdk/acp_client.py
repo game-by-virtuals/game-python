@@ -223,3 +223,16 @@ class AcpClient:
                 f"Response description: {response.text}\n"
             )
             raise Exception(f"Failed to reset state: {response.status_code} {response.text}")
+        
+    def delete_completed_job(self, job_id: int) -> None:
+        response = requests.delete(
+            f"{self.base_url}/{job_id}/wallet/{self.agent_wallet_address}",
+            headers={"x-api-key": self.api_key}
+        )
+        
+        if response.status_code not in [200, 204]:
+            raise Exception(
+                f"Error occurred in delete_completed_job function. Failed to delete job.\n"
+                f"Response status code: {response.status_code}\n"
+                f"Response description: {response.text}\n"
+            )

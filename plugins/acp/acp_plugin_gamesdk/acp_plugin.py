@@ -129,6 +129,9 @@ class AcpPlugin:
     def reset_state(self) -> None:
         self.acp_client.reset_state()
         
+    def delete_completed_job(self, job_id: int) -> None:
+        self.acp_client.delete_completed_job(job_id)
+        
     def get_acp_state(self) -> Dict:
         server_state = self.acp_client.get_state()
         server_state["inventory"]["produced"] = self.produced_inventory
