@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, List, Dict, Any
 from game_sdk.game.custom_types import Function
 from game_sdk.game.v2.worker.client import (
     FinalAnswerResponse,
@@ -32,15 +32,18 @@ class WorkerAgent:
         return self._session_id
 
     def send_message(self, message: str) -> str:
+        print(f"USER MESSAGE: {message}")
         agent_response = self._send_message(message)
         while isinstance(agent_response, FunctionCallResponse):
             function_to_call = self._action_space[agent_response.fn_name]
+            print(f"ACTION: {agent_response.model_dump()}")
             function_call_result = function_to_call.execute(
                 **{"fn_id": agent_response.fn_id, "args": agent_response.fn_args}
             )
+            print(f"OBSERVATION: {function_call_result.feedback_message}")
             agent_response = self._report_result(
-                function_call_result.feedback_message
-                or function_call_result.action_status.value,
+                f"API output: {function_call_result.feedback_message}" if function_call_result.feedback_message
+                else function_call_result.action_status.value,
                 function_call_result.action_id,
             )
 

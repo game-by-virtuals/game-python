@@ -12,13 +12,17 @@ class Argument(BaseModel):
     Attributes:
         name (str): The name of the argument.
         description (str): A clear description of what the argument does.
-        type (Optional[Union[List[str], str]]): The expected type(s) of the argument.
-        optional (Optional[bool]): Whether this argument is optional, defaults to False.
+        type (Optional[str]): The expected type of the argument.
+        properties (Optional[Dict[str, Any]]): The properties of the argument if it's an object.
+        items (Optional[Dict[str, Any]]): The items of the argument if it's an array.
+        enum (Optional[List[str]]): The enum values of the argument if it's an enum.
     """
     name: str
     description: str
-    type: Optional[Union[List[str], str]] = None
-    optional: Optional[bool] = False
+    type: str
+    properties: Optional[Dict[str, Any]] = None
+    items: Optional[Dict[str, Any]] = None
+    enum: Optional[List[str]] = None
 
 class FunctionResultStatus(str, Enum):
     """
