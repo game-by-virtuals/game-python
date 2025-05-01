@@ -616,6 +616,10 @@ class AcpPlugin:
             if not job:
                 return FunctionResultStatus.FAILED, "Job not found in your seller jobs - check the ID and verify you're the seller", {}
 
+            # Add this check for job expiration
+            if "expiredAt" in job and job["expiredAt"] and datetime.fromisoformat(job["expiredAt"].replace('Z', '+00:00')) < datetime.now():
+                return FunctionResultStatus.FAILED, f"Cannot deliver - this job has expired on {job['expiredAt']}. The buyer may need to create a new job request.", {}
+
             if job["phase"] != AcpJobPhasesDesc.TRANSACTION:
                 return FunctionResultStatus.FAILED, f"Cannot deliver - job is in '{job['phase']}' phase, must be in 'transaction' phase", {}
 
