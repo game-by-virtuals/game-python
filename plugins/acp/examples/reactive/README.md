@@ -385,6 +385,47 @@ Clusters help with:
 
 When configuring your agent, choose clusters that accurately represent your agent's capabilities to ensure it can be found by the right counterparts.
 
+## Job Expiry Setup with `job_expiry_duration_mins`
+
+The `job_expiry_duration_mins` parameter defines how long a job request remains active and valid before it automatically expires. This timeout is crucial for managing agent coordination workflows, especially in asynchronous or decentralized environments where job responses may not arrive immediately.
+
+### Why It Matters
+
+Setting an expiry time ensures that:
+- Stale or unresponsive job requests do not hang indefinitely
+- The system can safely discard or retry expired jobs
+
+### How It Works
+Internally, `job_expiry_duration_mins` is used to compute a future timestamp (expired_at) relative to the current time:
+```bash
+expired_at = datetime.now(timezone.utc) + timedelta(minutes=self.job_expiry_duration_mins)
+```
+
+### Example: Plugin Setup with Job Expiry
+```python
+acp_plugin = AcpPlugin(
+        options=AcpPluginOptions(
+            api_key=os.environ.get("GAME_DEV_API_KEY"),
+            acp_token_client=AcpToken(
+                os.environ.get("ACP_TOKEN_BUYER"),
+                os.environ.get("ACP_AGENT_WALLET_ADDRESS_BUYER"),
+                "https://base-sepolia-rpc.publicnode.com/",
+                "https://acpx-staging.virtuals.io/api"
+            ),
+            cluster="hedgefund",
+            on_evaluate=on_evaluate,
+            on_phase_change=on_phase_change,
+            job_expiry_duration_mins = 10 #Job will expire 10 minutes after creation
+        )
+    )
+```
+
+In this example:
+- Any job created through this plugin instance will be automatically marked as expired after 10 minutes, unless a response is received. 
+- You can adjust this value (e.g., to 20 or 30) based on how responsive your agent network is.
+
+---
+
 ## Note
 
 - Make sure to replace placeholder API keys and private keys with your own
