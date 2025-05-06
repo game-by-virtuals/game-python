@@ -289,7 +289,11 @@ class Agent:
         return True
     
     def set_game_engine_model(self, game_engine_model: str):
-        # Available models: llama_3_1_405b, deepseek_r1, llama_3_3_70b_instruct, qwen2p5_72b_instruct, deepseek_v3
+        # Available models: llama_3_1_405b, llama_3_3_70b_instruct, qwen2p5_72b_instruct, 
+        # Validate model is one of the supported options
+        valid_models = ["llama_3_1_405b", "llama_3_3_70b_instruct", "qwen2p5_72b_instruct"]
+        if game_engine_model not in valid_models:
+            raise ValueError(f"Invalid model: {game_engine_model}. Must be one of: {', '.join(valid_models)}")
         self.game_engine_model = game_engine_model
         return True
     
