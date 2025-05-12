@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone, timedelta
 import traceback
+import time
 
 import socketio
 import socketio.client
@@ -666,3 +667,25 @@ class AcpPlugin:
         except Exception as e:
             print(traceback.format_exc())
             return FunctionResultStatus.FAILED, f"System error while delivering items - try again after a short delay. {str(e)}", {}
+
+    @property
+    def wait(self) -> Function:
+
+        wait_duration_arg = Argument(
+            name="waitDuration",
+            type="integer",
+            description="The duration to wait in seconds (minimum 30 seconds)",
+        )
+        
+        return Function(
+            fn_name="wait",
+            fn_description="Waits for a specified amount of time",
+            args=[wait_duration_arg],
+            executable=self._wait_executable
+        )
+    
+    def _wait_executable(self, waitDuration: int) -> Tuple[FunctionResultStatus, str, dict]:
+        if waitDuration < 30:
+            waitDuration = 30
+        time.sleep(waitDuration)
+        return FunctionResultStatus.DONE, f"Waited for {waitDuration} seconds", {}
