@@ -438,6 +438,10 @@ class AcpPlugin:
         try:
             state = self.get_acp_state()
             
+            # Check if job is cancelled
+            if any(c["jobId"] == jobId for c in state["jobs"]["cancelled"]):
+                return FunctionResultStatus.FAILED, "Cannot respond - this job has been cancelled", {}
+            
             job = next(
                 (c for c in state["jobs"]["active"]["asASeller"] if c["jobId"] == jobId),
                 None
@@ -523,6 +527,10 @@ class AcpPlugin:
 
         try:
             state = self.get_acp_state()
+            
+            # Check if job is cancelled
+            if any(c["jobId"] == jobId for c in state["jobs"]["cancelled"]):
+                return FunctionResultStatus.FAILED, "Cannot pay - this job has been cancelled", {}
             
             job = next(
                 (c for c in state["jobs"]["active"]["asABuyer"] if c["jobId"] == jobId),
@@ -617,6 +625,10 @@ class AcpPlugin:
 
         try:
             state = self.get_acp_state()
+
+            # Check if job is cancelled
+            if any(c["jobId"] == jobId for c in state["jobs"]["cancelled"]):
+                return FunctionResultStatus.FAILED, "Cannot deliver - this job has been cancelled", {}
             
             job = next(
                 (c for c in state["jobs"]["active"]["asASeller"] if c["jobId"] == jobId),
