@@ -31,9 +31,12 @@ class WorkerAgent:
     def get_session(self) -> str:
         return self._session_id
 
-    def send_message(self, message: str) -> str:
-        print(f"USER MESSAGE: {message}")
-        agent_response = self._send_message(message)
+    def run(self, input: str, reset_session: bool = True) -> str:
+        if reset_session:
+            self._session_id = self._client.create_session(self._prompt)
+
+        print(f"USER MESSAGE: {input}")
+        agent_response = self._send_message(input)
         while isinstance(agent_response, FunctionCallResponse):
             function_to_call = self._action_space[agent_response.fn_name]
             print(f"ACTION: {agent_response.model_dump()}")
