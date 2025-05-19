@@ -1,0 +1,23 @@
+# General Information
+plugin_name: "Nillion"           # Name of the plugin
+author: "Mehmet Ugurbil"                # Author and team name
+logo_url: ""              # URL to the author photo or team logo (512x512 recommended) (if any)
+release_date: "2025-05"          # Release date (YYYY-MM)
+
+# Description
+short_description: "Nillion plugin to connect to nilDB."      # One-liner description for listings
+detailed_description: "Nillion plugin allows users to connect to nilDB, create schema, upload and download data."   # Full description with features and benefits
+
+# Media & Assets
+plugin_logo_url: ""        # URL to the plugin logo (512x512 recommended) (if any or fallback to logo_url)
+screenshots:               # List of screenshots showcasing the plugin (if any)
+  - ""                     # e.g., "https://example.com/screenshot1.png"
+  - ""
+demo_video_url: ""         # Link to a demo or walkthrough video (if any)
+documentation_url: ""      # Link to the plugin's official documentation (if any)
+changelog_url: ""          # Link to the changelog (if maintained)
+
+# Contact & Support
+x_account_handle: "@mugurbil"       # X (formerly known as Twitter) account handle (ie: @GAME_Virtuals)
+support_contact: "memo@nillion.com"        # Email or Slack/Discord link for user support
+community_url: "https://discord.com/invite/nillionnetwork"          # Forum or community link (if any)
