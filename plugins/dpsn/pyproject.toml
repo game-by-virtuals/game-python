@@ -1,0 +1,26 @@
+[project]
+name = "dpsn-plugin-gamesdk"
+version = "0.0.1"
+description = "DPSN Plugin for Python SDK for GAME by Virtuals"
+authors = [{ name = "dpsn-dev", email = "sanil@dpsn.org" }]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["dpsn-client==1.0.0.post1", "game-sdk>=0.1.1"]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/plugins/dpsn"
+"Bug Tracker" = "https://github.com/game-by-virtuals/game-python"

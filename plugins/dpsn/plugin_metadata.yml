@@ -1,0 +1,14 @@
+# General Information
+plugin_name: 'dpsn_plugin'
+author: 'DPSN-Tech-Team'
+logo_url: ''
+release_date: '2025-04'
+
+# Description
+short_description: 'DPSN plugin to subscribe to dpsn data streams for Virtuals Protocol agents'
+detailed_description: 'This plugin allows Virtuals Protocol agents in Python to connect to and interact with real-time data streams from the DPSN Data Streams Store. Agents can use it for decision-making and event handling. Developers can also publish custom streams using the dpsn-python-client.'
+
+# Contact & Support
+x_account_handle: '@DPSN_org'
+support_contact: 'sanil@dpsn.org'
+community_link: 'https://t.me/dpsn_dev'

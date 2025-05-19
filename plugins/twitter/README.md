@@ -1,90 +1,153 @@
 # Twitter Plugin for GAME SDK
 
-The Twitter plugin is a lightweight wrapper over commonly-used twitter API calls. It can be used as a executable on its own or by combining multiple of these into an executable.
+The **Twitter Plugin** provides a lightweight interface for integrating Twitter (X) functionality into your GAME SDK agents. Built on top of [`virtuals_tweepy`](https://pypi.org/project/virtuals-tweepy/) by the Virtuals team — a maintained fork of [`Tweepy`](https://pypi.org/project/tweepy/)) — this plugin lets you easily post tweets, fetch data, and execute workflows through agent logic.
+
+Use it standalone or compose multiple Twitter actions as part of a larger agent job.
+
+---
 
 ## Installation
-From this directory (`twitter`), run the installation:
+
+You can install the plugin using either `poetry` or `pip`:
+
 ```bash
+# Using Poetry (from the plugin directory)
 poetry install
 ```
+or
+```bash
+# Using pip (recommended for integration projects)
+pip install twitter_plugin_gamesdk
+```
 
-## Usage
-1. Choose one of the 2 options to initialise the Twitter plugin
-   - `GameTwitterPlugin` 
-     - This allows one to leverage GAME's X enterprise API credentials (i.e. higher rate limits)
-   - `TwitterPlugin`
-     - This allows one to use their own X API credentials
-2. Initialise plugin objects, run set-up scripts and use plugin functions
-   - `GameTwitterPlugin` 
-     - To get the access token to us this plugin, run the following command
-        ```bash
-        poetry run twitter-plugin-gamesdk auth -k <GAME_API_KEY>
-        ```
-        You will see the following output:
-        ```bash
-        Waiting for authentication...
+---
 
-        Visit the following URL to authenticate:
-        https://x.com/i/oauth2/authorize?response_type=code&client_id=VVdyZ0t4WFFRMjBlMzVaczZyMzU6MTpjaQ&redirect_uri=http%3A%2F%2Flocalhost%3A8714%2Fcallback&state=866c82c0-e3f6-444e-a2de-e58bcc95f08b&code_challenge=K47t-0Mcl8B99ufyqmwJYZFB56fiXiZf7f3euQ4H2_0&code_challenge_method=s256&scope=tweet.read%20tweet.write%20users.read%20offline.access
-        ```
-        After authenticating, you will receive the following message:
-        ```bash
-        Authenticated! Here's your access token:
-        apx-<xxx>
-        ```
-     - Set the access token as an environment variable called `GAME_TWITTER_ACCESS_TOKEN` (e.g. using a `.bashrc` or a `.zshrc` file):
-     - Import and initialize the plugin to use in your worker:
-        ```python
-        import os
-        from twitter_plugin_gamesdk.game_twitter_plugin import GameTwitterPlugin
+## Authentication Methods
 
-        # Define your options with the necessary credentials
-        options = {
-            "id": "test_game_twitter_plugin",
-            "name": "Test GAME Twitter Plugin",
-            "description": "An example GAME Twitter Plugin for testing.",
-            "credentials": {
-                "gameTwitterAccessToken": os.environ.get("GAME_TWITTER_ACCESS_TOKEN")
-            },
-        }
-        # Initialize the TwitterPlugin with your options
-        game_twitter_plugin = GameTwitterPlugin(options)
+We support two primary ways to authenticate:
 
-        # Post a tweet
-        post_tweet_fn = game_twitter_plugin.get_function('post_tweet')
-        post_tweet_fn("Hello world!")
-        ```
-        You can refer to `examples/test_game_twitter.py` for more examples on how to call the twitter functions. Note that there is a limited number of functions available. If you require more, please submit a feature requests via Github Issues.
-      
-   - `TwitterPlugin`
-     - If you don't already have one, create a X (twitter) account and navigate to the [developer portal](https://developer.x.com/en/portal/dashboard).
-     - Create a project app, generate the following credentials and set the following environment variables (e.g. using a `.bashrc` or a `.zshrc` file):
-       - `TWITTER_API_KEY`
-       - `TWITTER_API_SECRET_KEY`
-       - `TWITTER_ACCESS_TOKEN`
-       - `TWITTER_ACCESS_TOKEN_SECRET`
-     - Import and initialize the plugin to use in your worker:
-        ```python
-        import os
-        from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+### 1. GAME's Sponsored X Enterprise Access Token (Recommended)
 
-        # Define your options with the necessary credentials
-        options = {
-            "id": "test_twitter_worker",
-            "name": "Test Twitter Worker",
-            "description": "An example Twitter Plugin for testing.",
-            "credentials": {
-                "apiKey": os.environ.get("TWITTER_API_KEY"),
-                "apiSecretKey": os.environ.get("TWITTER_API_SECRET_KEY"),
-                "accessToken": os.environ.get("TWITTER_ACCESS_TOKEN"),
-                "accessTokenSecret": os.environ.get("TWITTER_ACCESS_TOKEN_SECRET"),
-            },
-        }
-        # Initialize the TwitterPlugin with your options
-        twitter_plugin = TwitterPlugin(options)
+Virtuals sponsors the community with a **Twitter Enterprise API access plan**, using OAuth 2.0 with PKCE. This provides:
 
-        # Post a tweet
-        post_tweet_fn = twitter_plugin.get_function('post_tweet')
-        post_tweet_fn("Hello world!")
-        ```
-        You can refer to `examples/test_twitter.py` for more examples on how to call the twitter functions.
+- Higher rate limits: **35 calls / 5 minutes**
+- Smoother onboarding
+- Free usage via your `GAME_API_KEY`
+
+#### a. Get Your Access Token
+
+Run the following command to authenticate using your `GAME_API_KEY`:
+
+```bash
+poetry run twitter-plugin-gamesdk auth -k <GAME_API_KEY>
+```
+
+This will prompt:
+
+```bash
+Waiting for authentication...
+
+Visit the following URL to authenticate:
+https://x.com/i/oauth2/authorize?...
+
+Authenticated! Here's your access token:
+apx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+#### b. Store Your Access Token
+
+We recommend storing environment variables in a `.env` file:
+
+```
+# .env
+
+GAME_TWITTER_ACCESS_TOKEN=apx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Then, use `load_dotenv()` to load them:
+
+```python
+import os
+from dotenv import load_dotenv
+from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+
+load_dotenv()
+
+options = {
+    "credentials": {
+        "game_twitter_access_token": os.environ.get("GAME_TWITTER_ACCESS_TOKEN")
+    }
+}
+
+twitter_plugin = TwitterPlugin(options)
+client = twitter_plugin.twitter_client
+
+client.create_tweet(text="Tweeting with GAME Access Token!")
+```
+
+---
+
+### 2. Use Your Own Twitter Developer Credentials
+
+Use this option if you need access to Twitter endpoints requiring a different auth level (e.g., **OAuth 1.0a User Context** or **OAuth 2.0 App Only**).
+
+> See [X API Auth Mapping](https://docs.x.com/resources/fundamentals/authentication/guides/v2-authentication-mapping) to determine which auth level is required for specific endpoints.
+
+#### a. Get Your Developer Credentials
+
+1. Sign in to the [Twitter Developer Portal](https://developer.x.com/en/portal/dashboard).
+2. Create a project and app.
+3. Generate the following keys and store them in your `.env` file:
+
+```
+# .env
+
+TWITTER_API_KEY=...
+TWITTER_API_SECRET_KEY=...
+TWITTER_ACCESS_TOKEN=...
+TWITTER_ACCESS_TOKEN_SECRET=...
+```
+
+#### b. Initialize the Plugin
+
+```python
+import os
+from dotenv import load_dotenv
+from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+
+load_dotenv()
+
+options = {
+    "credentials": {
+        "api_key": os.environ.get("TWITTER_API_KEY"),
+        "api_key_secret": os.environ.get("TWITTER_API_SECRET_KEY"),
+        "access_token": os.environ.get("TWITTER_ACCESS_TOKEN"),
+        "access_token_secret": os.environ.get("TWITTER_ACCESS_TOKEN_SECRET"),
+    }
+}
+
+twitter_plugin = TwitterPlugin(options)
+client = twitter_plugin.twitter_client
+
+client.create_tweet(text="Tweeting with personal developer credentials!")
+```
+
+---
+
+## Examples
+
+Explore the [`examples/`](./examples) directory for sample scripts demonstrating how to:
+
+- Post tweets
+- Reply to mentions
+- Quote tweets
+- Fetch user timelines
+- And more!
+
+---
+
+## API Reference
+
+This plugin wraps [`virtuals_tweepy`](https://pypi.org/project/virtuals-tweepy/), which is API-compatible with [Tweepy’s client interface](https://docs.tweepy.org/en/stable/client.html). Refer to their docs for supported methods and parameters.
+
+---
