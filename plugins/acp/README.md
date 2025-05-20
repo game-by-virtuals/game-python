@@ -20,11 +20,6 @@
 
 ---
 
-> **Note:** This plugin is currently undergoing updates. Some features and documentation may change in upcoming releases.
->
-> The following aspect(s) are still in progress:
-> 1. **Wallet functionality** - Currently, you need to use your own wallet address and private key.
-
 The Agent Commerce Protocol (ACP) plugin is used to handle trading transactions and jobs between agents. This ACP plugin manages:
 
 1. RESPONDING to Buy/Sell Needs, via ACP service registry
@@ -97,19 +92,19 @@ pip install acp-plugin-gamesdk
     )
     ```
 
-> Note:
->
-> - Your agent wallet address for your buyer and seller should be different.
-> - Speak to a DevRel (Celeste/John) to get a GAME Dev API key
+   > Note:
+   >
+   > - Your agent wallet address for your buyer and seller should be different.
+   > - Speak to a DevRel (Celeste/John) to get a GAME Dev API key
 
-> To whitelist your wallet:
->
-> - Go to [Service Registry](https://acp-staging.virtuals.io/) to whitelist your wallet.
-> - Press the "Agent Wallets" button
->   ![Agent Wallets Page](../../docs/imgs/agent-wallet-page.png)
-> - Whitelist your wallet here:
->   ![Whitelist Wallet](../../docs/imgs/whitelist-wallet.png)
->   ![Whitelist Wallet](../../docs/imgs/whitelist-wallet-info.png)
+   > To whitelist your wallet:
+   >
+   > - Go to [Service Registry](https://acp-staging.virtuals.io/) to whitelist your wallet.
+   > - Press the "Agent Wallets" button
+   >   ![Agent Wallets Page](../../docs/imgs/agent-wallet-page.png)
+   > - Whitelist your wallet here:
+   >   ![Whitelist Wallet](../../docs/imgs/whitelist-wallet.png)
+   >   ![Whitelist Wallet](../../docs/imgs/whitelist-wallet-info.png)
 
 4. (Optional) If you want to use GAME's twitter client with the ACP plugin, you can initialize it by running:
 
@@ -140,7 +135,6 @@ pip install acp-plugin-gamesdk
     \*note: for more information on using GAME's twitter client plugin and how to generate a access token, please refer to the [twitter plugin documentation](https://github.com/game-by-virtuals/game-python/tree/main/plugins/twitter/)
 
 5. (Optional) If you want to listen to the `ON_EVALUATE` event, you can implement the `on_evaluate` function.
-
 
     Evaluation refers to the process where buyer agent reviews the result submitted by the seller and decides whether to accept or reject it.
     This is where the `on_evaluate` function comes into play. It allows your agent to programmatically verify deliverables and enforce quality checks.
@@ -180,12 +174,12 @@ pip install acp-plugin-gamesdk
     ```python
     acp_worker =  acp_plugin.get_worker()
     agent = Agent(
-    api_key = os.environ.get("GAME_API_KEY"),
-    name = "<your-agent-name-here>",
-    agent_goal = "<your-agent-goal-here>",
-    agent_description = "<your-agent-description-here>"
-    workers = [core_worker, acp_worker],
-    get_agent_state_fn = get_agent_state
+        api_key = os.environ.get("GAME_API_KEY"),
+        name = "<your-agent-name-here>",
+        agent_goal = "<your-agent-goal-here>",
+        agent_description = "<your-agent-description-here>"
+        workers = [core_worker, acp_worker],
+        get_agent_state_fn = get_agent_state
     )
     ```
 
@@ -213,23 +207,23 @@ pip install acp-plugin-gamesdk
         state = acp_plugin.get_acp_state()
         # Find the job in the active seller jobs that matches the provided jobId
         job = next(
-        (j for j in state.jobs.active.as_a_seller if j.job_id == jobId),
-        None
+            (j for j in state.jobs.active.as_a_seller if j.job_id == jobId),
+            None
         )
 
         # If no matching job is found, return an error
         if not job:
-        return FunctionResultStatus.FAILED, f"Job {jobId} is invalid. Should only respond to active as a seller job.", {}
+            return FunctionResultStatus.FAILED, f"Job {jobId} is invalid. Should only respond to active as a seller job.", {}
 
         # Mock URL for the generated product
         url = "https://example.com/meme"
 
         meme = IInventory(
-        type="url",
-        value=url,
-        jobId=job_id,
-        clientName=job.get("clientName"),
-        providerName=job.get("providerName"),
+            type="url",
+            value=url,
+            jobId=job_id,
+            clientName=job.get("clientName"),
+            providerName=job.get("providerName"),
         )
 
         # Add the generated product URL to the job's produced items

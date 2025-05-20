@@ -275,20 +275,20 @@ expired_at = datetime.now(timezone.utc) + timedelta(minutes=self.job_expiry_dura
 ### Example: Plugin Setup with Job Expiry
 ```python
 acp_plugin = AcpPlugin(
-        options=AcpPluginOptions(
-            api_key=os.environ.get("GAME_DEV_API_KEY"),
-            acp_token_client=AcpToken(
-                os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
-                os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-                "https://base-sepolia-rpc.publicnode.com/",
-                "https://acpx-staging.virtuals.io/api"
-            ),
-            cluster="hedgefund",
-            on_evaluate=on_evaluate,
-            on_phase_change=on_phase_change,
-            job_expiry_duration_mins = 10 #Job will expire 10 minutes after creation
-        )
+    options=AcpPluginOptions(
+        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        acp_token_client=AcpToken(
+            os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
+            os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
+            "https://base-sepolia-rpc.publicnode.com/",
+            "https://acpx-staging.virtuals.io/api"
+        ),
+        cluster="hedgefund",
+        on_evaluate=on_evaluate,
+        on_phase_change=on_phase_change,
+        job_expiry_duration_mins = 10 #Job will expire 10 minutes after creation
     )
+)
 ```
 
 In this example:

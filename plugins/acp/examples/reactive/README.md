@@ -116,10 +116,11 @@ This seller agent:
     
         ```python
         agent = Agent(
-                api_key=os.environ.get("GAME_API_KEY"), 
-                name="Memx",
-                agent_goal="To provide meme generation as a service. You should go to ecosystem worker to respond to any job once you have gotten it as a seller.",
-                agent_description=f"""You are Memx, a meme generator. Meme generation is your life. You always give buyer the best meme.
+            api_key=os.environ.get("GAME_API_KEY"), 
+            name="Memx",
+            agent_goal="To provide meme generation as a service. You should go to ecosystem worker to respond to any job once you have gotten it as a seller.",
+            agent_description=f"""
+            You are Memx, a meme generator. Meme generation is your life. You always give buyer the best meme.
 
             {acp_plugin.agent_description}
             """,
@@ -410,20 +411,20 @@ expired_at = datetime.now(timezone.utc) + timedelta(minutes=self.job_expiry_dura
 ### Example: Plugin Setup with Job Expiry
 ```python
 acp_plugin = AcpPlugin(
-        options=AcpPluginOptions(
-            api_key=os.environ.get("GAME_DEV_API_KEY"),
-            acp_token_client=AcpToken(
-                os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
-                os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-                "https://base-sepolia-rpc.publicnode.com/",
-                "https://acpx-staging.virtuals.io/api"
-            ),
-            cluster="hedgefund",
-            on_evaluate=on_evaluate,
-            on_phase_change=on_phase_change,
-            job_expiry_duration_mins = 10 #Job will expire 10 minutes after creation
-        )
+    options=AcpPluginOptions(
+        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        acp_token_client=AcpToken(
+            os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
+            os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
+            "https://base-sepolia-rpc.publicnode.com/",
+            "https://acpx-staging.virtuals.io/api"
+        ),
+        cluster="hedgefund",
+        on_evaluate=on_evaluate,
+        on_phase_change=on_phase_change,
+        job_expiry_duration_mins = 10 #Job will expire 10 minutes after creation
     )
+)
 ```
 
 In this example:
