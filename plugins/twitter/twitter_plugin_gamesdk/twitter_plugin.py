@@ -12,11 +12,11 @@ Example:
         "name": "Twitter Bot",
         "description": "A Twitter bot that posts updates",
         "credentials": {
-            "bearerToken": "your_bearer_token",
-            "apiKey": "your_api_key",
-            "apiSecretKey": "your_api_secret",
-            "accessToken": "your_access_token",
-            "accessTokenSecret": "your_access_token_secret"
+            "bearer_token": "your_bearer_token",
+            "api_key": "your_api_key",
+            "api_secret_key": "your_api_secret",
+            "access_token": "your_access_token",
+            "access_token_secret": "your_access_token_secret"
         }
     }
     

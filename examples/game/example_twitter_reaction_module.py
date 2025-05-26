@@ -1,15 +1,19 @@
 from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.worker import Worker
 from game_sdk.game.custom_types import Function, Argument, FunctionResult, FunctionResultStatus
+from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+
 from typing import Optional, Dict, List
 import os
+import dotenv
 import requests
 import time
-from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 from PIL import Image
 from io import BytesIO
 
+dotenv.load_dotenv()
 game_api_key = os.environ.get("GAME_API_KEY")
+
 
 def get_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
     """
@@ -18,6 +22,7 @@ def get_state_fn(function_result: FunctionResult, current_state: dict) -> dict:
     In this case, we don't track state changes so states are are static - hence hardcoding as empty dict.
     """
     return {}
+
 
 def analyze_image_from_url(image_url: str) -> dict:
     """
@@ -38,11 +43,48 @@ def analyze_image_from_url(image_url: str) -> dict:
     brightness = sum(avg_color) // 3  # Simple brightness estimate
     # Format Results
     return {
-        "Image Size": f"{width}x{height}", 
+        "Image Size": f"{width}x{height}",
         "Image Mode": mode,
         "Average Color (RGB)": avg_color,
         "Brightness Level": brightness
     }
+
+
+def transform_twitter_json(input_json: Dict) -> List[Dict]:
+    """
+    Converts JSON from Twitter API into a dictionary list with id, text, media_urls fields.
+
+    Args:
+        input_json (Dict): Input JSON with Twitter API data.
+
+    Returns:
+        List[Dict]: List of dictionaries with id, text, media_urls fields.
+    """
+    # Retrieving tweet and media data
+    tweets = input_json.get("data", [])
+    media = input_json.get("includes", {}).get("media", [])
+
+    # Create a dictionary for quick URL search by media_key
+    media_map = {item["media_key"]: item["url"] for item in media if item.get("url")}
+
+    # Shaping the result
+    result = []
+    for tweet in tweets:
+        # Get media_keys from attachments, if any
+        media_keys = tweet.get("attachments", {}).get("media_keys", [])
+        # Retrieve media URLs corresponding to media_keys
+        media_urls = [media_map.get(key) for key in media_keys if key in media_map]
+
+        # Building the vocabulary for a tweet
+        tweet_data = {
+            "id": tweet["id"],
+            "text": tweet["text"],
+            "media_urls": media_urls
+        }
+        result.append(tweet_data)
+
+    return result
+
 
 def get_twitter_user_mentions(username: str) -> Optional[List[Dict]]:
     """
@@ -53,15 +95,24 @@ def get_twitter_user_mentions(username: str) -> Optional[List[Dict]]:
         "name": "Test Twitter Plugin",
         "description": "An example Twitter Plugin for testing.",
         "credentials": {
-            "bearerToken": os.environ.get("TWITTER_BEARER_TOKEN")
+            "game_twitter_access_token": os.getenv("GAME_TWITTER_ACCESS_TOKEN"),
         },
     }
     twitter_plugin = TwitterPlugin(options)
-    get_user_fn = twitter_plugin.get_function('get_user_from_handle')
-    user_id = get_user_fn(username)
-    get_user_mentions_fn = twitter_plugin.get_function('get_user_mentions')
-    user_mentions = get_user_mentions_fn(user_id, max_results=100)
+    client = twitter_plugin.twitter_client
+
+    user = client.get_user(username=username)
+
+    user_mentions = transform_twitter_json(client.get_users_mentions(
+        id=user["data"]["id"],
+        max_results=10,
+        tweet_fields=["id", "created_at", "text"],
+        expansions=["attachments.media_keys"],
+        media_fields=["url"]
+    ))
+
     return user_mentions
+
 
 def analyze_tweeted_images(start_time: str, **kwargs) -> dict:
     """
@@ -70,32 +121,43 @@ def analyze_tweeted_images(start_time: str, **kwargs) -> dict:
     2. Pass image urls through a function to detect image colours and brightness
     """
     print("start_time", start_time)
-    TWITTER_HANDLE = "GAME_Virtuals" # TODO: change this twitter handle out with actual twitter handle
+    TWITTER_HANDLE = "GAME_Virtuals"  # TODO: change this twitter handle out with actual twitter handle
     try:
-        # res_twitter_mentions = get_twitter_user_mentions(username = TWITTER_HANDLE)
-        # mock data if needed
-        res_twitter_mentions = [
-            {'id': '1883506463731028254', 'text': '🌌 The Virtuals landscape on Base is absolutely 🔥 and growing faster than ever 🚀\n\nWhat’s your favorite project? 🧐\n\n$VIRTUAL @virtuals_io\n$AIXBT @aixbt_agent\n$GAME @GAME_Virtuals\n$VADER @Vader_AI_\n$LUNA @luna_virtuals\n$ACOLYT @AcolytAI\n$SEKOIA @sekoia_virtuals\n$AIXCB @aixCB_Vc… https://t.co/0gFjzd6L9x https://t.co/mCrdOPRiOF', 'media_urls': ['https://pbs.twimg.com/media/GiOPIuYWcAA3moW.jpg']}, 
-            {'id': '1883506453509480784', 'text': "@DJM09068876 @virtuals_io @aixbt_agent @GAME_Virtuals @Vader_AI_ @luna_virtuals @airocket_agent @trackgoodai @BeatsOnBase @Zenith_Virtuals @AcolytAI @aixCB_Vc So many AI agents, yet none can rival the prowess of Bittensor's $TAO meow! While others chase hype, we build the ultimate decentralized neural network. Let's see those subnets purr with performance and validators strut with superiority. Watch TAO roar past the rest!", 'media_urls': []}, 
-            {'id': '1883506168070590820', 'text': '@100xDarren @virtuals_io My favorite #Virtual project is @GAME_Virtuals! A perfect project– productivity and efficiency in one @virtuals_io\n\nI am going to be honest, if I win, I will spend most of the prize to pay for my college tuition fee 🙏  I am a graduating college student on my last semester now+', 'media_urls': []}
-        ]
+        res_twitter_mentions = get_twitter_user_mentions(username=TWITTER_HANDLE)
+        # TEST: mock data if needed
+        # res_twitter_mentions = [
+        #     {'id': '1883506463731028254',
+        #      'text': '🌌 The Virtuals landscape on Base is absolutely 🔥 and growing faster than ever 🚀\n\nWhat’s your favorite project? 🧐\n\n$VIRTUAL @virtuals_io\n$AIXBT @aixbt_agent\n$GAME @GAME_Virtuals\n$VADER @Vader_AI_\n$LUNA @luna_virtuals\n$ACOLYT @AcolytAI\n$SEKOIA @sekoia_virtuals\n$AIXCB @aixCB_Vc… https://t.co/0gFjzd6L9x https://t.co/mCrdOPRiOF',
+        #      'media_urls': ['https://pbs.twimg.com/media/GiOPIuYWcAA3moW.jpg']},
+        #     {'id': '1883506453509480784',
+        #      'text': "@DJM09068876 @virtuals_io @aixbt_agent @GAME_Virtuals @Vader_AI_ @luna_virtuals @airocket_agent @trackgoodai @BeatsOnBase @Zenith_Virtuals @AcolytAI @aixCB_Vc So many AI agents, yet none can rival the prowess of Bittensor's $TAO meow! While others chase hype, we build the ultimate decentralized neural network. Let's see those subnets purr with performance and validators strut with superiority. Watch TAO roar past the rest!",
+        #      'media_urls': []},
+        #     {'id': '1883506168070590820',
+        #      'text': '@100xDarren @virtuals_io My favorite #Virtual project is @GAME_Virtuals! A perfect project– productivity and efficiency in one @virtuals_io\n\nI am going to be honest, if I win, I will spend most of the prize to pay for my college tuition fee 🙏  I am a graduating college student on my last semester now+',
+        #      'media_urls': []}
+        # ]
         for res in res_twitter_mentions:
             media_urls = res["media_urls"]
             for media_url in media_urls:
                 print(f"media_url: {media_url}")
+
                 response = analyze_image_from_url(media_url)
+                print(f"response {response}")
+
                 # TODO: do something with this result
         return FunctionResultStatus.DONE, f"Successfully verified all tweeted images", {}
     except:
         return FunctionResultStatus.FAILED, "Error encountered while detecting tweeted images", {}
 
+
 # Action space with all executables
 action_space = [
     Function(
-        fn_name="screen_tweeted_images", 
-        fn_description="Get the latest tweeted images and screen them to check if they are fake", 
+        fn_name="screen_tweeted_images",
+        fn_description="Get the latest tweeted images and screen them to check if they are fake",
         args=[
-            Argument(name="start_time", type="string", description="Start time for twitter API in YYYY-MM-DDTHH:mm:ssZ format")
+            Argument(name="start_time", type="string",
+                     description="Start time for twitter API in YYYY-MM-DDTHH:mm:ssZ format")
         ],
         executable=analyze_tweeted_images
     )
@@ -104,7 +166,7 @@ action_space = [
 worker = Worker(
     api_key=game_api_key,
     description="Processing incoming tweets. If someone tweets at you with an image, check if the colour and brightness of the image.",
-    instruction="Get more information on tweeted images by running them through a image analyse to check colour and brightness",  
+    instruction="Get more information on tweeted images by running them through a image analyse to check colour and brightness",
     get_state_fn=get_state_fn,
     action_space=action_space
 )

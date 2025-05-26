@@ -26,8 +26,15 @@ classifiers = [
 dependencies = [
     "typing-extensions>=4.0.0",
     "requests>=2.26.0",
-    "pydantic>=2.10.5"
+    "pydantic>=2.10.5",
+    "dotenv>=0.9.9",
+    "pillow>=10.4.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/game-by-virtuals/game-python"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
