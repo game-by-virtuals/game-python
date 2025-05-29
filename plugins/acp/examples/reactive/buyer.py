@@ -55,7 +55,11 @@ def buyer():
     def on_phase_change(job: AcpJob) -> None:
         out = ""
         out += f"Buyer agent is reacting to job:\n{job}\n\n"
-
+        
+        if "getAgentByWalletAddress" in job and job["getAgentByWalletAddress"] is not None:
+            provider_agent = job["getAgentByWalletAddress"](job["providerAddress"])
+            print("Provider Agent Twitter Handle:", provider_agent.twitter_handle)
+        
         worker = buyer_agent.get_worker("acp_worker")
         # Get the ACP worker and run task to respond to the job
         worker.run(

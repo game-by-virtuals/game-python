@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum, Enum
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Callable
 
 @dataclass
 class AcpOffering:
@@ -79,10 +79,13 @@ class AcpJob:
     desc: str
     price: str
     providerAddress: Optional[str]
+    clientAddress: Optional[str]
     phase: AcpJobPhasesDesc
     memo: List[AcpRequestMemo]
     tweetHistory : ITweet | List
     lastUpdated: int
+    getAgentByWalletAddress: Optional[Callable[[str], AcpAgent]]
+    
 
     def __repr__(self) -> str:
         output =(
@@ -92,6 +95,7 @@ class AcpJob:
             f"Description: {self.desc}, "
             f"Price: {self.price}, "
             f"Provider Address: {self.providerAddress}, "
+            f"Client Address: {self.clientAddress}, "
             f"Phase: {self.phase.value}, "
             f"Memo: {self.memo}, "
             f"Tweet History: {self.tweetHistory}, "

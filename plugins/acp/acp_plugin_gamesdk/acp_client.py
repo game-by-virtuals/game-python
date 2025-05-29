@@ -264,3 +264,39 @@ class AcpClient:
                 f"Response status code: {response.status_code}\n"
                 f"Response description: {response.text}\n"
             )
+            
+    def get_agent_by_wallet_address(self, wallet_address: str) -> AcpAgent:
+        url = f"{self.acp_base_url}/agents?filters[walletAddress]={wallet_address}"
+        
+        response = requests.get(
+            url,
+        )
+        
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to get agent: {response.status_code} {response.text}"
+            )
+            
+        response_json = response.json()
+        
+        result = []
+        
+        for agent in response_json.get("data", []):
+            if agent["offerings"]:
+                offerings = [AcpOffering(name=offering["name"], price=offering["price"]) for offering in agent["offerings"]]
+            else:
+                offerings = None
+                
+            result.append(
+                AcpAgent(
+                    id=agent["id"],
+                    name=agent["name"],
+                    twitter_handle=agent["twitterHandle"],
+                    description=agent["description"],
+                    wallet_address=agent["walletAddress"],
+                    offerings=offerings,
+                    score=0,
+                    explanation=""
+                )
+            )
+        return result[0]

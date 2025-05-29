@@ -74,7 +74,10 @@ class AcpPlugin:
             if options.on_evaluate is not None:
                 self.on_evaluate = options.on_evaluate
             if options.on_phase_change is not None:
-                self.on_phase_change = options.on_phase_change
+                def phase_change_wrapper(job : AcpJob):
+                    job["getAgentByWalletAddress"] = self.acp_client.get_agent_by_wallet_address
+                    return options.on_phase_change(job)
+                self.on_phase_change = phase_change_wrapper
             self.initialize_socket()
         self.job_expiry_duration_mins = options.job_expiry_duration_mins if options.job_expiry_duration_mins is not None else 1440
         
@@ -115,7 +118,6 @@ class AcpPlugin:
             @self.socket.on(SocketEvents["ON_PHASE_CHANGE"])
             def on_phase_change(data):
                 if hasattr(self, 'on_phase_change') and self.on_phase_change:
-                    print(f"on_phase_change: {data}")
                     self.on_phase_change(data)
             
             # Set up cleanup function for graceful shutdown
