@@ -25,6 +25,7 @@ class AcpClient:
 
         self.acp_base_url = self.acp_token.acp_base_url
         self.base_url = self.acp_token.game_api_url + "/acp"
+        self.chain_id = self.acp_token.chain_id
 
     @property
     def agent_wallet_address(self) -> str:
@@ -49,6 +50,7 @@ class AcpClient:
     ) -> List[AcpAgent]:
 
         url = f"{self.acp_base_url}/agents"
+        hasGraduated = "true" if self.chain_id == 8453 else "false"
 
         params = {
             "search": query,
@@ -56,6 +58,7 @@ class AcpClient:
             "filters[walletAddress][$notIn]": self.agent_wallet_address,
             "rerank": "true" if rerank else "false",
             "top_k": top_k,
+            "filters[hasGraduated]": hasGraduated,
         }
         response = requests.get(url, params=params)
 
