@@ -25,6 +25,7 @@ class AcpClient:
 
         self.acp_base_url = self.acp_token.acp_base_url
         self.base_url = self.acp_token.game_api_url + "/acp"
+        self.chain_id = self.acp_token.chain_id
 
     @property
     def agent_wallet_address(self) -> str:
@@ -49,6 +50,7 @@ class AcpClient:
     ) -> List[AcpAgent]:
 
         url = f"{self.acp_base_url}/agents"
+        hasGraduated = "true" if self.chain_id == 8453 else "false"
 
         params = {
             "search": query,
@@ -56,6 +58,7 @@ class AcpClient:
             "filters[walletAddress][$notIn]": self.agent_wallet_address,
             "rerank": "true" if rerank else "false",
             "top_k": top_k,
+            "filters[hasGraduated]": hasGraduated,
         }
         response = requests.get(url, params=params)
 
@@ -170,25 +173,20 @@ class AcpClient:
         return job_id
 
     def response_job(self, job_id: int, accept: bool, memo_id: int, reasoning: str):
-        if accept:
-            self.acp_token.sign_memo(memo_id, accept, reasoning)
-            time.sleep(5)
+        self.acp_token.sign_memo(memo_id, accept, reasoning)
+        
+        if not accept:
+            return
+        
+        time.sleep(5)
 
-            return self.acp_token.create_memo(
-                job_id=job_id,
-                content=f"Job {job_id} accepted. {reasoning}",
-                memo_type=MemoType.MESSAGE,
-                is_secured=False,
-                next_phase=AcpJobPhases.TRANSACTION
-            )
-        else:
-            return self.acp_token.create_memo(
-                job_id=job_id,
-                content=f"Job {job_id} rejected. {reasoning}",
-                memo_type=MemoType.MESSAGE,
-                is_secured=False,
-                next_phase=AcpJobPhases.REJECTED
-            )
+        return self.acp_token.create_memo(
+            job_id=job_id,
+            content=f"Job {job_id} accepted. {reasoning}",
+            memo_type=MemoType.MESSAGE,
+            is_secured=False,
+            next_phase=AcpJobPhases.TRANSACTION
+        )
 
     def make_payment(self, job_id: int, amount: float, memo_id: int, reason: str):
         # Convert amount to Wei (smallest ETH unit)

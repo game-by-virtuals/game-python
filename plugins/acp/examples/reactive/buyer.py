@@ -53,6 +53,10 @@ options = {
 def buyer():
     # upon phase change, the buyer agent will respond to the transaction
     def on_phase_change(job: AcpJob) -> None:
+        if job.phase != AcpJobPhasesDesc.REJECTED:
+            print(f"Job phase is rejected.")
+            return
+        
         out = ""
         out += f"Buyer agent is reacting to job:\n{job}\n\n"
         

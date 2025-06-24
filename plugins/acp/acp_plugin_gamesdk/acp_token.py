@@ -93,6 +93,7 @@ class AcpToken:
         )
         self.acp_base_url = config.acp_api_url
         self.game_api_url = config.game_api_url
+        self.chain_id = config.chain_id
 
     def get_agent_wallet_address(self) -> str:
         return self.agent_wallet_address
