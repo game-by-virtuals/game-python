@@ -170,25 +170,20 @@ class AcpClient:
         return job_id
 
     def response_job(self, job_id: int, accept: bool, memo_id: int, reasoning: str):
-        if accept:
-            self.acp_token.sign_memo(memo_id, accept, reasoning)
-            time.sleep(5)
+        self.acp_token.sign_memo(memo_id, accept, reasoning)
+        
+        if not accept:
+            return
+        
+        time.sleep(5)
 
-            return self.acp_token.create_memo(
-                job_id=job_id,
-                content=f"Job {job_id} accepted. {reasoning}",
-                memo_type=MemoType.MESSAGE,
-                is_secured=False,
-                next_phase=AcpJobPhases.TRANSACTION
-            )
-        else:
-            return self.acp_token.create_memo(
-                job_id=job_id,
-                content=f"Job {job_id} rejected. {reasoning}",
-                memo_type=MemoType.MESSAGE,
-                is_secured=False,
-                next_phase=AcpJobPhases.REJECTED
-            )
+        return self.acp_token.create_memo(
+            job_id=job_id,
+            content=f"Job {job_id} accepted. {reasoning}",
+            memo_type=MemoType.MESSAGE,
+            is_secured=False,
+            next_phase=AcpJobPhases.TRANSACTION
+        )
 
     def make_payment(self, job_id: int, amount: float, memo_id: int, reason: str):
         # Convert amount to Wei (smallest ETH unit)
