@@ -26,16 +26,14 @@ The buyer agent (`buyer.py`):
 ```python
 acp_plugin = AcpPlugin(
     options=AcpPluginOptions(
-        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        api_key=os.environ.get("GAME_API_KEY",""),
         acp_client=VirtualsACP(
-            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
+            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY",""),
             agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-            config=BASE_SEPOLIA_CONFIG,
-            on_evaluate=on_evaluate_function.
+            on_evaluate=on_evaluate,
+            entity_id=int(os.environ.get("BUYER_ENTITY_ID", 1))
         ),
-        twitter_plugin = "<twitter_plugin_instance>",
-        cluster = "<cluster>",
-        evaluator_cluster = "<evaluator_cluster>",
+        twitter_plugin=TwitterPlugin(options)
     )
 )
 ```
@@ -53,14 +51,13 @@ The seller agent (`seller.py`):
 ```python
 acp_plugin = AcpPlugin(
     options=AcpPluginOptions(
-        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        api_key=os.environ.get("GAME_API_KEY",""),
         acp_client=VirtualsACP(
-            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
+            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY",""),
             agent_wallet_address=os.environ.get("SELLER_AGENT_WALLET_ADDRESS"),
-            config=BASE_SEPOLIA_CONFIG
+            entity_id=int(os.environ.get("SELLER_ENTITY_ID", 1))
         ),
-        cluster = "<cluster>",
-        twitter_plugin = "<twitter_plugin_instance>",
+        twitter_plugin=TwitterPlugin(options)
     )
 )
 ```
@@ -94,11 +91,11 @@ acp_plugin = AcpPlugin(
     WHITELISTED_WALLET_PRIVATE_KEY=<0x-your-whitelisted-wallet-private-key>
     BUYER_AGENT_WALLET_ADDRESS=<0x-your-buyer-agent-wallet-address>
     SELLER_AGENT_WALLET_ADDRESS=<0x-your-seller-agent-wallet-address>
+    BUYER_ENTITY_ID=<your-buyer-entity-id>
+    SELLER_ENTITY_ID=<your-seller-entity-id>
 
     # GAME API Key (get from https://console.game.virtuals.io/)
     GAME_API_KEY=<apt-your-game-api-key>
-    # GAME Dev API Key (get from Virtuals' DevRels)
-    GAME_DEV_API_KEY=<apt-your-game-dev-api-key>
 
     # GAME Twitter Access Token for X (Twitter) Authentication
     BUYER_AGENT_GAME_TWITTER_ACCESS_TOKEN=<apx-your-buyer-agent-game-twitter-access-token>
@@ -123,6 +120,7 @@ acp_plugin = AcpPlugin(
     from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
     from virtuals_acp.client import VirtualsACP
     from virtuals_acp import ACPJob, ACPJobPhase
+    from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
     from dotenv import load_dotenv
 
     load_dotenv()
@@ -177,7 +175,6 @@ Then, pass this function into the VirtualsACP client:
 acp_client = VirtualsACP(
     wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
     agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-    config=BASE_SEPOLIA_CONFIG,
     on_evaluate=on_evaluate
 )
 ```
@@ -283,14 +280,14 @@ expired_at = datetime.now(timezone.utc) + timedelta(minutes=self.job_expiry_dura
 ```python
 acp_plugin = AcpPlugin(
     options=AcpPluginOptions(
-        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        api_key=os.environ.get("GAME_API_KEY",""),
         acp_client=VirtualsACP(
-            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
+            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY",""),
             agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-            config=BASE_SEPOLIA_CONFIG,
-            on_evaluate=on_evaluate
+            on_evaluate=on_evaluate,
+            entity_id=int(os.environ.get("BUYER_ENTITY_ID", 1))
         ),
-        cluster="hedgefund",
+        cluster="hedgefund", #Example Cluster
         job_expiry_duration_mins=10  # Job will expire 10 minutes after creation
     )
 )

@@ -7,7 +7,6 @@ from rich.panel import Panel
 from typing import Tuple
 from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
 from virtuals_acp.client import VirtualsACP
-from virtuals_acp.configs import BASE_SEPOLIA_CONFIG
 from acp_plugin_gamesdk.interface import AcpState, AcpJobPhasesDesc, IInventory
 from game_sdk.game.custom_types import Argument, Function, FunctionResultStatus
 from game_sdk.game.agent import Agent, WorkerConfig
@@ -49,12 +48,11 @@ options = {
 def seller():
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
-            api_key=os.environ.get("GAME_DEV_API_KEY",""),
+            api_key=os.environ.get("GAME_API_KEY",""),
             acp_client=VirtualsACP(
                 wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY",""),
                 agent_wallet_address=os.environ.get("SELLER_AGENT_WALLET_ADDRESS"),
-                config=BASE_SEPOLIA_CONFIG,
-                entity_id=int(os.environ.get("ENTITY_ID", 1))
+                entity_id=int(os.environ.get("SELLER_ENTITY_ID", 1))
             ),       
              twitter_plugin=TwitterPlugin(options)
         )

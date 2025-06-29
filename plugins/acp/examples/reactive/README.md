@@ -41,11 +41,11 @@ This step is a critical precursor. Without registration, the counterpart agent w
     WHITELISTED_WALLET_PRIVATE_KEY=<0x-your-whitelisted-wallet-private-key>
     BUYER_AGENT_WALLET_ADDRESS=<0x-your-buyer-agent-wallet-address>
     SELLER_AGENT_WALLET_ADDRESS=<0x-your-seller-agent-wallet-address>
+    BUYER_ENTITY_ID=<your-buyer-entity-id>
+    SELLER_ENTITY_ID=<your-seller-entity-id>
 
     # GAME API Key (get from https://console.game.virtuals.io/)
     GAME_API_KEY=<apt-your-game-api-key>
-    # GAME Dev API Key (get from Virtuals' DevRels)
-    GAME_DEV_API_KEY=<apt-your-game-dev-api-key>
 
     # GAME Twitter Access Token for X (Twitter) Authentication
     BUYER_AGENT_GAME_TWITTER_ACCESS_TOKEN=<apx-your-buyer-agent-game-twitter-access-token>
@@ -68,18 +68,21 @@ This step is a critical precursor. Without registration, the counterpart agent w
 
     ```python
     from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
+    from acp_plugin_gamesdk.env import PluginEnvSettings
+    from acp_plugin_gamesdk.interface import AcpState, to_serializable_dict
     from virtuals_acp.client import VirtualsACP
     from virtuals_acp import ACPJob, ACPJobPhase
+    from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
     from dotenv import load_dotenv
 
-    load_dotenv()
+    load_dotenv(override=True)
+    env = PluginEnvSettings()
     ```
 
 5. Configure your environment:
 
    - Set up your API keys
      - GAME API key (get from https://console.game.virtuals.io/)
-     - GAME Dev API key (please contact us to get one)
    - Configure your wallet private key
    - Set up your GAME Twitter access token
 
@@ -116,17 +119,17 @@ This seller agent:
   1. Setup the Seller Agent
     
         ```python
-        agent = Agent(
-            api_key=os.environ.get("GAME_API_KEY"), 
-            name="Memx",
-            agent_goal="To provide meme generation as a service. You should go to ecosystem worker to respond to any job once you have gotten it as a seller.",
-            agent_description=f"""
-            You are Memx, a meme generator. Meme generation is your life. You always give buyer the best meme.
-
-            {acp_plugin.agent_description}
-            """,
-            workers=[acp_worker],
-            get_agent_state_fn=get_agent_state
+        acp_plugin = AcpPlugin(
+            options=AcpPluginOptions(
+                api_key=env.GAME_API_KEY,
+                acp_client=VirtualsACP(
+                    wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
+                    agent_wallet_address=env.SELLER_AGENT_WALLET_ADDRESS,
+                    on_new_task=on_new_task,
+                    entity_id=env.SELLER_ENTITY_ID
+                ),
+                twitter_plugin=TwitterPlugin(options)
+            )
         )
         ```
 
@@ -235,10 +238,26 @@ This agent plays a **dual role**:
    This part automatically pays for a job once a deliverable is received.
 
     ```python
+    # Buyer agent is meant to handle payments
+    buyer_worker = acp_plugin.get_worker(
+        {
+            "functions": [
+                acp_plugin.pay_job
+            ]
+        }
+    )
+
     buyer_agent = Agent(
-        api_key=os.environ.get("GAME_API_KEY"),
+        api_key=env.GAME_API_KEY,
         name="Buyer",
-        ...
+        agent_goal="Perform and complete transaction with seller",
+        agent_description=f"""
+        Agent that gain market traction by posting meme. Your interest are in cats and AI. 
+        You can head to acp to look for agents to help you generating meme.
+        Do not look for a relevant validator to validate the deliverable.
+
+        {acp_plugin.agent_description}
+        """,
         workers=[buyer_worker],
         get_agent_state_fn=get_agent_state
     )
@@ -266,13 +285,14 @@ This agent plays a **dual role**:
 
     ```python
     agent = Agent(
-        api_key=os.environ.get("GAME_API_KEY"),
+        api_key=env.GAME_API_KEY,
         name="Virtuals",
         agent_goal="Finding the best meme to do tweet posting",
         agent_description=f"""
         Agent that gain market traction by posting meme. Your interest are in cats and AI. 
         You can head to acp to look for agents to help you generating meme.
-        
+        Do not look for a relevant validator to validate the deliverable.
+
         {acp_plugin.agent_description}
         """,
         workers=[core_worker, acp_worker],
@@ -285,15 +305,15 @@ This agent plays a **dual role**:
 ```python
 acp_plugin = AcpPlugin(
     options=AcpPluginOptions(
-        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        api_key=env.GAME_API_KEY,
         acp_client=VirtualsACP(
-            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
-            agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-            config=BASE_SEPOLIA_CONFIG,
+            wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
+            agent_wallet_address=env.BUYER_AGENT_WALLET_ADDRESS,
             on_evaluate=on_evaluate,
-            on_new_task=on_new_task
+            on_new_task=on_new_task,
+            entity_id=env.BUYER_ENTITY_ID
         ),
-        twitter_plugin=GameTwitterPlugin(options)
+        twitter_plugin=TwitterPlugin(options)
     )
 )
 ```
@@ -332,7 +352,6 @@ Then, pass this function into the VirtualsACP client:
 acp_client = VirtualsACP(
     wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
     agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-    config=BASE_SEPOLIA_CONFIG,
     on_evaluate=on_evaluate
 )
 ```
@@ -438,13 +457,13 @@ expired_at = datetime.now(timezone.utc) + timedelta(minutes=self.job_expiry_dura
 ```python
 acp_plugin = AcpPlugin(
     options=AcpPluginOptions(
-        api_key=os.environ.get("GAME_DEV_API_KEY"),
+        api_key=env.GAME_API_KEY,
         acp_client=VirtualsACP(
-            wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY"),
-            agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-            config=BASE_SEPOLIA_CONFIG,
+            wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
+            agent_wallet_address=env.BUYER_AGENT_WALLET_ADDRESS,
             on_evaluate=on_evaluate,
-            on_new_task=on_new_task
+            on_new_task=on_new_task,
+            entity_id=env.BUYER_ENTITY_ID
         ),
         cluster="hedgefund",
         job_expiry_duration_mins=10  # Job will expire 10 minutes after creation

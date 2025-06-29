@@ -9,7 +9,6 @@ from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.custom_types import Argument, Function, FunctionResultStatus
 from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
 from virtuals_acp.client import VirtualsACP
-from virtuals_acp.configs import BASE_SEPOLIA_CONFIG
 from virtuals_acp import ACPJob, ACPJobPhase
 from acp_plugin_gamesdk.interface import AcpState, AcpJobPhasesDesc
 from dotenv import load_dotenv
@@ -58,13 +57,12 @@ options = {
 def buyer():
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
-            api_key=os.environ.get("GAME_DEV_API_KEY",""),
+            api_key=os.environ.get("GAME_API_KEY",""),
             acp_client=VirtualsACP(
                 wallet_private_key=os.environ.get("WHITELISTED_WALLET_PRIVATE_KEY",""),
                 agent_wallet_address=os.environ.get("BUYER_AGENT_WALLET_ADDRESS"),
-                config=BASE_SEPOLIA_CONFIG,
                 on_evaluate=on_evaluate,
-                entity_id=int(os.environ.get("ENTITY_ID", 1))
+                entity_id=int(os.environ.get("BUYER_ENTITY_ID", 1))
             ),
             twitter_plugin=TwitterPlugin(options),
         )

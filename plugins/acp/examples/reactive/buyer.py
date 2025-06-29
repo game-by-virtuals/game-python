@@ -6,7 +6,6 @@ from acp_plugin_gamesdk.interface import AcpState, to_serializable_dict
 from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
 from acp_plugin_gamesdk.env import PluginEnvSettings
 from virtuals_acp.client import VirtualsACP
-from virtuals_acp.configs import BASE_MAINNET_CONFIG
 from virtuals_acp import ACPJob, ACPJobPhase
 from rich import print, box
 from rich.panel import Panel
@@ -82,11 +81,10 @@ def buyer():
     
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
-            api_key=env.GAME_DEV_API_KEY,
+            api_key=env.GAME_API_KEY,
             acp_client=VirtualsACP(
                 wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
                 agent_wallet_address=env.BUYER_AGENT_WALLET_ADDRESS,
-                config=BASE_MAINNET_CONFIG,
                 on_evaluate=on_evaluate,
                 on_new_task=on_new_task,
                 entity_id=env.BUYER_ENTITY_ID
