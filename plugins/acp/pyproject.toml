@@ -12,7 +12,7 @@ game-sdk = ">=0.1.5"
 python-dotenv = "^1.1.0"
 dacite = "^1.9.2"
 rich = ">=13.9.4,<15.0.0"
-virtuals-acp = "^0.1.16"
+virtuals-acp = "^0.1.17"
 
 [build-system]
 requires = ["poetry-core"]

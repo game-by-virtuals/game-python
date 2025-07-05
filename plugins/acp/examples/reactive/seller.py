@@ -19,6 +19,7 @@ from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 # from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
 
 load_dotenv(override=True)
+
 env = PluginEnvSettings()
 
 
@@ -46,11 +47,61 @@ options = {
 #     },
 # }
 
-def seller():
+def seller(use_thread_lock: bool = True):
+    if env.WHITELISTED_WALLET_PRIVATE_KEY is None:
+        return
+    
+    if env.SELLER_ENTITY_ID is None:
+        return
+
+    # Thread-safe job queue setup
+    job_queue = []
+    job_queue_lock = threading.Lock()
+    job_event = threading.Event()
+
+    # Thread-safe append wrapper
+    def safe_append_job(job):
+        if use_thread_lock:
+            with job_queue_lock:
+                job_queue.append(job)
+        else:
+            job_queue.append(job)
+
+    # Thread-safe pop wrapper
+    def safe_pop_job():
+        if use_thread_lock:
+            with job_queue_lock:
+                if job_queue:
+                    return job_queue.pop(0)
+        else:
+            if job_queue:
+                return job_queue.pop(0)
+        return None
+
+    # Background thread worker
+    def job_worker():
+        while True:
+            job_event.wait()
+
+            # Process all available jobs before sleeping again
+            job = safe_pop_job()
+            while job:
+                process_job(job)
+                job = safe_pop_job()
+
+            # Go back to waiting state
+            job_event.clear()
+
+    # Event-triggered job task receiver
     def on_new_task(job: ACPJob):
+        safe_append_job(job)
+        job_event.set()
+
+    def process_job(job: ACPJob):
         out = ""
         out += f"Reacting to job:\n{job}\n\n"
         prompt = ""
+
         if job.phase == ACPJobPhase.REQUEST:
             for memo in job.memos:
                 if memo.next_phase == ACPJobPhase.NEGOTIATION:
@@ -81,12 +132,6 @@ def seller():
             out += "✅ Seller has responded to job.\n"
             
         print(Panel(out, title="🔁 Reaction", box=box.ROUNDED, title_align="left", border_style="red"))
-
-    if env.WHITELISTED_WALLET_PRIVATE_KEY is None:
-        return
-    
-    if env.SELLER_ENTITY_ID is None:
-        return
     
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
@@ -187,9 +232,12 @@ def seller():
     init_state = AcpState.model_validate(agent.agent_state)
     print(Panel(f"{init_state}", title="Agent State", box=box.ROUNDED, title_align="left"))
     print("🔴"*40)
-    print("\nListening\n")
+
+     # Start background thread
+    threading.Thread(target=job_worker, daemon=True).start()
+    print("\nListening...\n")
     threading.Event().wait()
 
 
 if __name__ == "__main__":
-    seller()
+    seller(use_thread_lock=True)

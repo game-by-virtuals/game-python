@@ -1,3 +1,5 @@
+import threading
+
 from typing import Tuple
 from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.custom_types import Argument, Function, FunctionResultStatus
@@ -53,9 +55,55 @@ options = {
 #     },
 # }
 
-def buyer():
-    # upon phase change, the buyer agent will respond to the transaction
+def buyer(use_thread_lock: bool = True):
+    if env.WHITELISTED_WALLET_PRIVATE_KEY is None:
+        return
+    
+    if env.BUYER_ENTITY_ID is None:
+        return
+    
+    # Thread-safe job queue setup
+    job_queue = []
+    job_queue_lock = threading.Lock()
+    job_event = threading.Event()
+
+    # Thread-safe append with optional lock
+    def safe_append_job(job):
+        if use_thread_lock:
+            with job_queue_lock:
+                job_queue.append(job)
+        else:
+            job_queue.append(job)
+
+    # Thread-safe pop with optional lock
+    def safe_pop_job():
+        if use_thread_lock:
+            with job_queue_lock:
+                if job_queue:
+                    return job_queue.pop(0)
+        else:
+            if job_queue:
+                return job_queue.pop(0)
+        return None
+
+    # Background thread worker: process jobs one by one
+    def job_worker():
+        while True:
+            job_event.wait()  # Wait for job
+
+            job = safe_pop_job()
+            while job:
+                process_job(job)
+                job = safe_pop_job()
+
+            job_event.clear()  # Go back to wait
+
+    # Event-triggered job task receiver
     def on_new_task(job: ACPJob):
+        safe_append_job(job)
+        job_event.set()
+
+    def process_job(job: ACPJob):  # 🔁 Extracted logic
         out = ""
         print(job.phase, "job.phase")
         if job.phase == ACPJobPhase.NEGOTIATION:
@@ -63,21 +111,12 @@ def buyer():
                 print(memo.next_phase, "memo.next_phase")
                 if memo.next_phase == ACPJobPhase.TRANSACTION:
                     out += f"Buyer agent is reacting to job:\n{job}\n\n"
-        
                     buyer_agent.get_worker("acp_worker").run(
                         f"Respond to the following transaction: {job}",
                     )
-        
                     out += "Buyer agent has responded to the job\n"
+
         print(Panel(out, title="🔁 Reaction", box=box.ROUNDED, title_align="left", border_style="red"))
-    
-    
-    if env.WHITELISTED_WALLET_PRIVATE_KEY is None:
-        return
-    
-    if env.BUYER_ENTITY_ID is None:
-        return
-    
     
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
@@ -185,6 +224,9 @@ def buyer():
     buyer_agent.compile()
     agent.compile()
 
+    # Start background job thread
+    threading.Thread(target=job_worker, daemon=True).start()
+
     while True:
         print("🟢"*40)
         init_state = AcpState.model_validate(agent.agent_state)
@@ -196,4 +238,4 @@ def buyer():
         input("\nPress any key to continue...\n")
 
 if __name__ == "__main__":
-    buyer()
+    buyer(use_thread_lock=True)
