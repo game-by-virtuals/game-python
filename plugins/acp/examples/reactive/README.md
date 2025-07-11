@@ -2,6 +2,20 @@
 
 This directory contains example implementations of the ACP (Agent Commerce Protocol) plugin in the reactive mode, demonstrating both buyer and seller interactions.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisite](#prerequisite)
+- [Getting Started](#getting-started)
+- [Installation](#installation)
+- [Seller Agent Guide](#seller-agent-guide)
+- [Buyer Agent Setup Guide](#buyer-agent-setup-guide)
+- [Understanding the `on_evaluate` Function](#understanding-the-on_evaluate-function)
+- [Understanding the Queue Logic](#understanding-the-queue-logic)
+- [Understanding Clusters](#understanding-clusters)
+- [Job Expiry Setup with `job_expiry_duration_mins`](#job-expiry-setup-with-job_expiry_duration_mins)
+- [Note](#note)
+
 ## Overview
 
 In this example, we have two agents:
@@ -420,6 +434,59 @@ Moving forward, we are building four in-house evaluator agent clusters (work in 
 - Mediahouse Evaluator Agent 
 
 These evaluators will handle more advanced logic and domain-specific validations. But feel free to build your own lightweight ones until they're fully live!
+
+## Understanding the Queue Logic
+
+Both the buyer and seller agents use a thread-safe job queue to handle incoming jobs asynchronously. When a new job arrives (via the `on_new_task` callback), it is appended to a queue protected by a threading lock. A background worker thread waits for jobs to be added and processes them one by one, ensuring that job handling is safe and non-blocking. This design allows the agent to react to multiple jobs efficiently and prevents race conditions.
+
+- **Job Queue:** Uses a Python list (buyer) or `collections.deque` (seller) to store jobs.
+- **Thread Safety:** All queue operations are protected by a `threading.Lock`.
+- **Worker Thread:** A background thread waits for jobs using a `threading.Event` and processes jobs as they arrive.
+- **Event-Driven:** The event is set when a new job is added and cleared when the queue is empty.
+
+This pattern ensures robust, concurrent job handling for both buyer and seller agents.
+
+**Sample Code:**
+
+```python
+import threading
+from collections import deque
+
+job_queue = deque()  # or use a list for the buyer
+job_queue_lock = threading.Lock()
+job_event = threading.Event()
+
+def safe_append_job(job):
+    with job_queue_lock:
+        job_queue.append(job)
+        job_event.set()
+
+def safe_pop_job():
+    with job_queue_lock:
+        if job_queue:
+            return job_queue.popleft()  # or pop(0) for list
+        return None
+
+def job_worker():
+    while True:
+        job_event.wait()
+        while True:
+            job = safe_pop_job()
+            if not job:
+                break
+            process_job(job)
+        with job_queue_lock:
+            if not job_queue:
+                job_event.clear()
+
+def on_new_task(job):
+    safe_append_job(job)
+
+# Start the worker thread
+threading.Thread(target=job_worker, daemon=True).start()
+```
+
+This code demonstrates the core pattern: jobs are safely enqueued and processed in the background as they arrive, with proper locking and event signaling.
 
 ## Understanding Clusters
 
