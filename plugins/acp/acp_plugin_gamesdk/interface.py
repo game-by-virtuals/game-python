@@ -1,9 +1,35 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, List, Literal, Dict, Any
-from pydantic import BaseModel
+from typing import Optional, List, Literal, Dict, Any, Callable
+from pydantic import BaseModel, ConfigDict
+from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
+from virtuals_acp import VirtualsACP, ACPContractConfig, DEFAULT_CONFIG
 
-from virtuals_acp.models import ACPJobPhase, IDeliverable
+from virtuals_acp.models import ACPJobPhase, IDeliverable, ACPGraduationStatus, ACPOnlineStatus
+
+
+class AcpPluginOptions(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    api_key: str
+    twitter_plugin: TwitterPlugin | None = None
+    cluster: Optional[str] = None
+    evaluator_cluster: Optional[str] = None
+    graduation_status: Optional[ACPGraduationStatus] = None
+    online_status: Optional[ACPOnlineStatus] = None
+    job_expiry_duration_mins: Optional[int] = None
+    keep_completed_jobs: Optional[int] = None
+    keep_cancelled_jobs: Optional[int] = None
+    keep_produced_inventory: Optional[int] = None
+
+
+class AcpClientOptions(BaseModel):
+    wallet_private_key: str
+    agent_wallet_address: str
+    entity_id: int
+    config: ACPContractConfig = DEFAULT_CONFIG
+    on_evaluate: Optional[Callable] = None
+    on_new_task: Optional[Callable] = None
 
 
 class AcpOffering(BaseModel):
@@ -13,6 +39,7 @@ class AcpOffering(BaseModel):
     def __str__(self) -> str:
         return f"Offering(name={self.name}, price={self.price})"
 
+
 class AcpJobPhasesDesc(str, Enum):
     REQUEST = "request"
     NEGOTIATION = "pending_payment"
@@ -21,6 +48,7 @@ class AcpJobPhasesDesc(str, Enum):
     COMPLETED = "completed"
     REJECTED = "rejected"
     EXPIRED = "expired"
+
 
 ACP_JOB_PHASE_MAP: Dict[ACPJobPhase, AcpJobPhasesDesc] = {
     ACPJobPhase.REQUEST: AcpJobPhasesDesc.REQUEST,
@@ -32,6 +60,7 @@ ACP_JOB_PHASE_MAP: Dict[ACPJobPhase, AcpJobPhasesDesc] = {
     ACPJobPhase.EXPIRED: AcpJobPhasesDesc.EXPIRED,
 }
 
+
 ACP_JOB_PHASE_REVERSE_MAP: Dict[str, ACPJobPhase] = {
     "request": ACPJobPhase.REQUEST,
     "pending_payment": ACPJobPhase.NEGOTIATION,
@@ -42,17 +71,20 @@ ACP_JOB_PHASE_REVERSE_MAP: Dict[str, ACPJobPhase] = {
     "expired": ACPJobPhase.EXPIRED,
 }
 
+
 class AcpRequestMemo(BaseModel):
     id: int
 
     def __repr__(self) -> str:
         return f"Memo(ID: {self.id})"
-    
+
+
 class ITweet(BaseModel):
     type: Literal["buyer", "seller"]
     tweet_id: str
     content: str
     created_at: int
+
 
 class IAcpJob(BaseModel):
     job_id: Optional[int]
@@ -84,6 +116,7 @@ class IInventory(IDeliverable):
     client_name: Optional[str]
     provider_name: Optional[str]
 
+
 class AcpJobsSection(BaseModel):
     as_a_buyer: List[IAcpJob]
     as_a_seller: List[IAcpJob]
@@ -92,6 +125,7 @@ class AcpJobsSection(BaseModel):
         buyer_jobs = "\n".join([f"#{i+1} {str(job)}" for i, job in enumerate(self.as_a_buyer)])
         seller_jobs = "\n".join([f"#{i+1} {str(job)}" for i, job in enumerate(self.as_a_seller)])
         return f"As Buyer:\n{buyer_jobs}\n\nAs Seller:\n{seller_jobs}"
+
 
 class AcpJobs(BaseModel):
     active: AcpJobsSection
@@ -105,7 +139,8 @@ class AcpJobs(BaseModel):
             f"🟢 Completed:\n{self.completed}\n"
             f"🔴 Cancelled:\n{self.cancelled}"
         )
-    
+
+
 class AcpInventory(BaseModel):
     acquired: List[IInventory]
     produced: Optional[List[IInventory]]
@@ -116,6 +151,7 @@ class AcpInventory(BaseModel):
             f"Acquired: {self.acquired}\n"
             f"Produced: {self.produced}"
         )
+
 
 class AcpState(BaseModel):
     inventory: AcpInventory
@@ -129,19 +165,3 @@ class AcpState(BaseModel):
             f"State End".center(50, '=')
         )
 
-def to_serializable_dict(obj: Any) -> Any:
-    if isinstance(obj, Enum):
-        return obj.value
-    elif isinstance(obj, dict):
-        return {k: to_serializable_dict(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [to_serializable_dict(item) for item in obj]
-    elif hasattr(obj, "__dict__"):
-        return {
-            k: to_serializable_dict(v)
-            for k, v in vars(obj).items()
-            if not k.startswith("_")
-        }
-    else:
-        return obj
-    

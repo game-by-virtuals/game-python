@@ -292,7 +292,7 @@ If you need more advanced or custom filtering (such as filtering by job ID or ag
 
 ```python
 from tools.reduce_agent_state import reduce_agent_state
-from acp_plugin_gamesdk.interface import to_serializable_dict
+from acp_plugin_gamesdk.utils import to_serializable_dict
 
 # Get full state, then post-filter (custom logic, less efficient)
 state = acp_plugin.get_acp_state()

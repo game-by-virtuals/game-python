@@ -2,7 +2,8 @@ import threading
 
 from typing import Tuple
 from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
-from acp_plugin_gamesdk.interface import AcpState, IInventory, to_serializable_dict
+from acp_plugin_gamesdk.interface import AcpState, IInventory, AcpClientOptions
+from acp_plugin_gamesdk.utils import to_serializable_dict
 from acp_plugin_gamesdk.env import PluginEnvSettings
 from virtuals_acp.client import VirtualsACP
 from virtuals_acp import ACPJob, ACPJobPhase
@@ -164,14 +165,14 @@ def seller(use_thread_lock: bool = True):
     acp_plugin = AcpPlugin(
         options=AcpPluginOptions(
             api_key=env.GAME_API_KEY,
-            acp_client=VirtualsACP(
-                wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
-                agent_wallet_address=env.SELLER_AGENT_WALLET_ADDRESS,
-                on_new_task=on_new_task,
-                entity_id=env.SELLER_ENTITY_ID
-            ),
             # GAME Twitter Plugin
-            twitter_plugin=TwitterPlugin(options),
+            # twitter_plugin=TwitterPlugin(options),
+        ),
+        acp_client_config=AcpClientOptions(
+            wallet_private_key=env.WHITELISTED_WALLET_PRIVATE_KEY,
+            agent_wallet_address=env.SELLER_AGENT_WALLET_ADDRESS,
+            entity_id=env.SELLER_ENTITY_ID,
+            on_new_task=on_new_task
         )
     )
 

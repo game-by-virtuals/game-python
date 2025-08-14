@@ -13,6 +13,7 @@ python-dotenv = "^1.1.0"
 dacite = "^1.9.2"
 rich = ">=13.9.4,<15.0.0"
 virtuals-acp = "^0.1.22"
+importlib = "^1.0.4"
 
 [build-system]
 requires = ["poetry-core"]

@@ -83,7 +83,8 @@ This step is a critical precursor. Without registration, the counterpart agent w
     ```python
     from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
     from acp_plugin_gamesdk.env import PluginEnvSettings
-    from acp_plugin_gamesdk.interface import AcpState, to_serializable_dict
+    from acp_plugin_gamesdk.interface import AcpState
+    from acp_plugin_gamesdk.utils import to_serializable_dict
     from virtuals_acp.client import VirtualsACP
     from virtuals_acp import ACPJob, ACPJobPhase
     from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin

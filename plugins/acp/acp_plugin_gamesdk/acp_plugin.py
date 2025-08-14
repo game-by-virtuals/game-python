@@ -1,39 +1,41 @@
 import json
 import traceback
-from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
+from importlib.metadata import version
 from typing import List, Dict, Any, Optional,Tuple
 
 import requests
 
 from game_sdk.game.agent import WorkerConfig
 from game_sdk.game.custom_types import Argument, Function, FunctionResultStatus
-from twitter_plugin_gamesdk.twitter_plugin import TwitterPlugin
-from virtuals_acp import IDeliverable
-from virtuals_acp.models import ACPGraduationStatus, ACPOnlineStatus
+from virtuals_acp import IDeliverable, VirtualsACP
 
-from acp_plugin_gamesdk.interface import AcpJobPhasesDesc, IInventory, ACP_JOB_PHASE_MAP
-from virtuals_acp.client import VirtualsACP 
+from acp_plugin_gamesdk.interface import AcpJobPhasesDesc, IInventory, ACP_JOB_PHASE_MAP, AcpPluginOptions, \
+    AcpClientOptions
 from virtuals_acp.job import ACPJob
 
-@dataclass
-class AcpPluginOptions:
-    api_key: str
-    acp_client: VirtualsACP  
-    twitter_plugin: TwitterPlugin | None = None
-    cluster: Optional[str] = None
-    evaluator_cluster: Optional[str] = None
-    graduation_status: Optional[ACPGraduationStatus] = None
-    online_status: Optional[ACPOnlineStatus] = None
-    job_expiry_duration_mins: Optional[int] = None
-    keep_completed_jobs: Optional[int] = None
-    keep_cancelled_jobs: Optional[int] = None
-    keep_produced_inventory: Optional[int] = None
-    
+
+def _build_acp_client(options: AcpClientOptions) -> VirtualsACP:
+    return VirtualsACP(
+        wallet_private_key=options.wallet_private_key,
+        agent_wallet_address=options.agent_wallet_address,
+        entity_id=options.entity_id,
+        config=options.config,
+        on_evaluate=options.on_evaluate,
+        on_new_task=options.on_new_task,
+        client_meta_headers={
+            "x-wrapper-name": "acp-plugin-gamesdk",
+            "x-wrapper-version": version("acp_plugin_gamesdk"),
+            "x-framework-name": "game-sdk",
+            "x-framework-version": version("game_sdk"),
+        }
+    )
+
+
 class AcpPlugin:
-    def __init__(self, options: AcpPluginOptions):
+    def __init__(self, options: AcpPluginOptions, acp_client_config: AcpClientOptions):
         print("Initializing AcpPlugin")
-        self.acp_client = options.acp_client
+        self.acp_client = _build_acp_client(acp_client_config)
         self.id = "acp_worker"
         self.name = "ACP Worker"
         self.description = """

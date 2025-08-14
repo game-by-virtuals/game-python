@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import List, Dict, Any
 
 from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
-from acp_plugin_gamesdk.interface import to_serializable_dict
+from acp_plugin_gamesdk.utils import to_serializable_dict
 from acp_plugin_gamesdk.env import PluginEnvSettings
 from virtuals_acp.client import VirtualsACP
 from virtuals_acp.configs import BASE_MAINNET_CONFIG

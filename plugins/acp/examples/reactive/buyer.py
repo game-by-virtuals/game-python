@@ -4,8 +4,9 @@ from typing import Tuple
 from game_sdk.game.agent import Agent, WorkerConfig
 from game_sdk.game.custom_types import Argument, Function, FunctionResultStatus
 
-from acp_plugin_gamesdk.interface import AcpState, to_serializable_dict
-from acp_plugin_gamesdk.acp_plugin import AcpPlugin, AcpPluginOptions
+from acp_plugin_gamesdk.interface import AcpState, AcpPluginOptions
+from acp_plugin_gamesdk.utils import to_serializable_dict
+from acp_plugin_gamesdk.acp_plugin import AcpPlugin
 from acp_plugin_gamesdk.env import PluginEnvSettings
 from virtuals_acp.client import VirtualsACP
 from virtuals_acp import ACPJob, ACPJobPhase
