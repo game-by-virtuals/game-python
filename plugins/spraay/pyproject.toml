@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spraay-plugin-gamesdk"
+version = "0.1.0"
+description = "Spraay batch payments plugin for GAME SDK by Virtuals Protocol. Enables AI agents to batch-send ETH and ERC-20 tokens on Base."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "plagtech", email = "spraay@proton.me"},
+]
+keywords = ["game-sdk", "virtuals", "spraay", "batch-payments", "base", "ethereum", "ai-agents", "defi"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "game-sdk>=0.1.1",
+    "web3>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://spraay.app"
+Repository = "https://github.com/plagtech/spraay-game-plugin"
+Documentation = "https://spraay.app"
+Issues = "https://github.com/plagtech/spraay-game-plugin/issues"
+
+[tool.setuptools.packages.find]
+include = ["spraay_plugin_gamesdk*"]
