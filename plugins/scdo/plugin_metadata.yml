@@ -1,0 +1,22 @@
+# General Information
+plugin_name: "scdo_plugin_gamesdk"
+author: "SCDO Lab"
+logo_url: ""
+release_date: "2026-10"
+
+# Description
+short_description: "SCDO x402 wallet for GAME agents: each agent gets its own USDC wallet on Base, pays HTTP 402 URLs within caps, and logs signed rows on the public SCDO Agent Ledger."
+detailed_description: "Adds a worker (or functions for your own worker) that registers the agent with an ERC-8004 identity, creates its own SCDO x402 wallet (USDC on Base mainnet, or Base Sepolia for testing), shows balances, pays x402 (HTTP 402) URLs and books received payments as income. Keys are generated locally by the open-source scdo-agent CLI and never leave the agent's data directory. Spending caps: 0.001 to 1 USDC per payment, 100 payments and 20 USDC per day, plus per-agent caps. Every registration, wallet, payment and income is a signed row on the public SCDO Agent Ledger."
+
+# Media & Assets
+plugin_logo_url: ""
+screenshots:
+  - ""
+demo_video_url: ""
+documentation_url: "https://scdo.com.au/agent/?src=dir-game-python"
+changelog_url: "https://github.com/SCDOLAB/scdo-agent-plugins/releases"
+
+# Contact & Support
+x_account_handle: "@SCDOLabor"
+support_contact: "https://github.com/SCDOLAB/scdo-agent-plugins/issues"
+community_url: "https://github.com/SCDOLAB/scdo-agent-plugins"

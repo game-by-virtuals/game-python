@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scdo_plugin_gamesdk"
+version = "0.1.0"
+authors = [{ name = "SCDO Lab" }]
+description = "SCDO x402 wallet plugin for GAME by Virtuals: each agent gets its own USDC wallet on Base, with signed rows on the SCDO Agent Ledger"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+]
+dependencies = ["game-sdk>=0.1.5"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scdo_plugin_gamesdk"]
+
+[project.urls]
+"Homepage" = "https://github.com/game-by-virtuals/game-python/tree/main/plugins/scdo"
+"Upstream" = "https://github.com/SCDOLAB/scdo-agent-plugins"
